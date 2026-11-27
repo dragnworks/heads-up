@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#080711">
+  <meta name="description" content="Heads Up! A party game you can play in a browser. Hold the phone to your forehead and let your friends give you clues.">
+  <title>Heads Up!</title>
+  <style>
+    :root {
+      --bg: #080711;
+      --bg-elev: #141221;
+      --bg-card: #1b1830;
+      --text: #fff8f0;
+      --muted: #b7b0cc;
+      --line: rgba(255,255,255,0.10);
+      --pink: #ff3d7f;
+      --gold: #ffd166;
+      --mint: #3dffb3;
+      --cyan: #5ce1ff;
+      --orange: #ff8a3d;
+      --violet: #8b7cff;
+      --green: #22d68a;
+      --danger: #ff5c7a;
+      --shadow: 0 18px 40px rgba(0,0,0,0.35);
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", ui-rounded, system-ui, sans-serif;
+      min-height: 100%;
+      min-height: 100dvh;
+    }
+    body {
+      overscroll-behavior: none;
+      -webkit-user-select: none; user-select: none;
+    }
+    input, textarea, button { font: inherit; }
+    input, textarea { -webkit-user-select: text; user-select: text; }
+    button { color: inherit; cursor: pointer; }
+    button, a { -webkit-touch-callout: none; }
+    img { border: 0; }
+
+    .hidden { display: none !important; }
+
+    #app {
+      min-height: 100dvh;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(139,124,255,0.22), transparent 55%),
+        radial-gradient(900px 500px at 110% 0%, rgba(255,61,127,0.18), transparent 50%),
+        radial-gradient(800px 400px at 50% 120%, rgba(92,225,255,0.10), transparent 50%),
+        var(--bg);
+    }
+
+    /* ===== HOME ===== */
+    #screen-home {
+      padding: calc(20px + var(--safe-t)) 20px calc(28px + var(--safe-b));
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .hero {
+      display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+      gap: 12px; margin-bottom: 18px;
+    }
+    .logo {
+      margin: 0;
+      font-size: clamp(2.4rem, 8vw, 4.2rem);
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      font-weight: 800;
+    }
+    .logo span {
+      background: linear-gradient(110deg, #fff 10%, #ffd166 40%, #ff3d7f 80%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .tagline { margin: 8px 0 0; color: var(--muted); font-size: 1.02rem; max-width: 36rem; line-height: 1.4; }
+    .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .icon-btn {
+      width: 46px; height: 46px; border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      display: grid; place-items: center;
+      font-size: 1.2rem;
+    }
+    .icon-btn:hover, .text-btn:hover, .card:hover { transform: translateY(-1px); }
+    .icon-btn, .text-btn, .card, .pill, .primary, .ghost { transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin: 8px 0 18px;
+    }
+    @media (min-width: 720px) {
+      .toolbar { grid-template-columns: 1fr auto auto; align-items: center; }
+    }
+    .search {
+      position: relative;
+    }
+    .search input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 12px 16px 12px 42px;
+      outline: none;
+    }
+    .search input:focus { border-color: rgba(255,209,102,0.6); box-shadow: 0 0 0 3px rgba(255,209,102,0.15); }
+    .search .mag { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); opacity: 0.7; }
+    .toolbar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .text-btn, .primary, .ghost, .danger-btn {
+      border-radius: 999px;
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.07);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .primary {
+      background: linear-gradient(180deg, #ff5a93, #ff3d7f);
+      border-color: transparent;
+      color: white;
+      box-shadow: 0 8px 20px rgba(255,61,127,0.28);
+    }
+    .text-btn.gold {
+      background: linear-gradient(180deg, #ffe08a, #ffd166);
+      color: #3a2a00;
+      border-color: transparent;
+    }
+    .text-btn.mint {
+      background: linear-gradient(180deg, #6affe0, #3dffb3);
+      color: #053326;
+      border-color: transparent;
+    }
+    .ghost { background: transparent; }
+    .danger-btn { background: rgba(255,92,122,0.15); border-color: rgba(255,92,122,0.35); color: #ffd0d8; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+      gap: 12px;
+    }
+    @media (min-width: 800px) {
+      .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    }
+    .card {
+      appearance: none;
+      text-align: left;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius: var(--radius);
+      padding: 16px 14px 14px;
+      min-height: 148px;
+      display: flex; flex-direction: column; gap: 8px;
+      position: relative;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute; inset: 0 auto 0 0; width: 5px;
+      background: var(--accent, var(--pink));
+    }
+    .card .emoji { font-size: 2rem; line-height: 1; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35)); }
+    .card .name { font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; line-height: 1.2; }
+    .card .meta { margin-top: auto; color: var(--muted); font-size: 0.82rem; font-weight: 700; }
+    .card .badge {
+      position: absolute; top: 10px; right: 10px;
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em;
+      background: rgba(255,209,102,0.16); color: var(--gold);
+      border-radius: 999px; padding: 3px 7px;
+    }
+    .card-actions {
+      position: absolute; top: 8px; right: 8px; display: flex; gap: 4px;
+    }
+    .card-actions button {
+      border: 0; background: rgba(0,0,0,0.35);
+      width: 28px; height: 28px; border-radius: 8px; font-size: 0.85rem;
+    }
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center; color: var(--muted); padding: 40px 10px;
+    }
+
+    footer.home-foot {
+      margin-top: 22px;
+      display: flex; flex-wrap: wrap; gap: 8px;
+      align-items: center; justify-content: space-between;
+      color: var(--muted); font-size: 0.88rem;
+    }
+    footer.home-foot .row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ===== MODALS / SECONDARY SCREENS ===== */
+    .overlay-screen {
+      position: fixed; inset: 0;
+      background: rgba(6,5,14,0.72);
+      backdrop-filter: blur(10px);
+      z-index: 20;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+    }
+    @media (min-width: 720px) {
+      .overlay-screen { align-items: center; padding: 24px; }
+    }
+    .panel {
+      background: #161326;
+      border: 1px solid var(--line);
+      border-radius: 24px 24px 0 0;
+      width: min(640px, 100%);
+      max-height: min(92dvh, 900px);
+      overflow: auto;
+      padding: 22px 20px calc(20px + var(--safe-b));
+      box-shadow: var(--shadow);
+    }
+    @media (min-width: 720px) {
+      .panel { border-radius: 24px; padding: 26px; }
+    }
+    .panel h2 { margin: 0 0 6px; font-size: 1.6rem; letter-spacing: -0.03em; }
+    .panel p.lead { margin: 0 0 18px; color: var(--muted); }
+    .field { margin: 0 0 14px; }
+    .field label { display: block; font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; color: var(--muted); }
+    .field input, .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 12px;
+      outline: none;
+    }
+    .field textarea { min-height: 220px; resize: vertical; line-height: 1.4; }
+    .seg {
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .seg button {
+      flex: 1; min-width: 64px;
+      border-radius: 12px; padding: 10px 8px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      font-weight: 800;
+    }
+    .seg button[aria-pressed="true"] {
+      background: var(--gold); color: #3a2a00; border-color: transparent;
+    }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 12px 0;
+      border-top: 1px solid var(--line);
+    }
+    .toggle-row strong { display: block; }
+    .toggle-row span { color: var(--muted); font-size: 0.85rem; }
+    .switch {
+      width: 52px; height: 30px; border-radius: 999px; border: 0;
+      background: #3a3654; position: relative; flex: 0 0 auto;
+    }
+    .switch[aria-pressed="true"] { background: var(--green); }
+    .switch i {
+      position: absolute; top: 3px; left: 3px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: white; transition: left 0.15s ease;
+    }
+    .switch[aria-pressed="true"] i { left: 25px; }
+    .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .hint {
+      background: rgba(92,225,255,0.08);
+      border: 1px solid rgba(92,225,255,0.2);
+      color: #d9f7ff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin: 12px 0;
+    }
+
+    /* ===== PLAY ===== */
+    #screen-play {
+      position: fixed; inset: 0;
+      z-index: 30;
+      background: #160d2a;
+      color: white;
+      display: flex; flex-direction: column;
+      padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+    }
+    .play-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px 0;
+      gap: 8px;
+      position: relative; z-index: 3;
+    }
+    .timer {
+      font-weight: 800;
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+    }
+    .timer.warn { color: var(--gold); animation: pulse 0.7s ease-in-out infinite; }
+    .timer.danger { color: #ff6b6b; animation: pulse 0.45s ease-in-out infinite; }
+    @keyframes pulse { 50% { transform: scale(1.08); } }
+    .cat-chip {
+      font-weight: 800; font-size: 0.85rem; opacity: 0.85;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 45vw;
+    }
+    .end-now {
+      border: 0; background: rgba(255,255,255,0.12);
+      color: white; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 0.8rem;
+    }
+
+    .play-stage {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+      min-height: 0;
+    }
+    .hit-zone {
+      border: 0; background: transparent; color: inherit;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0 12px calc(18px + var(--safe-b));
+      font-weight: 800; letter-spacing: 0.14em; font-size: 0.85rem;
+      opacity: 0.7;
+    }
+    .hit-zone.pass { background: linear-gradient(90deg, rgba(255,138,61,0.16), transparent 80%); }
+    .hit-zone.got { background: linear-gradient(270deg, rgba(34,214,138,0.16), transparent 80%); }
+    .word-wrap {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      padding: 12px 7vw;
+      z-index: 2;
+    }
+    #word {
+      margin: 0;
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      text-wrap: balance;
+      text-shadow: 0 8px 30px rgba(0,0,0,0.45);
+      animation: pop-in 0.22s ease;
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.86); opacity: 0.2; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    #countdown-layer, #flash-layer, #rotate-hint {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+    #countdown-layer {
+      background: #12091f;
+      pointer-events: auto;
+      flex-direction: column; gap: 8px;
+    }
+    #count-num {
+      font-size: clamp(6rem, 28vw, 12rem);
+      font-weight: 800; letter-spacing: -0.06em;
+      animation: count-pop 0.55s ease;
+    }
+    @keyframes count-pop {
+      0% { transform: scale(0.6); opacity: 0; }
+      40% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    #flash-layer {
+      font-size: clamp(3rem, 12vw, 6rem);
+      font-weight: 800; letter-spacing: 0.06em;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+    #flash-layer.show { opacity: 1; }
+    #flash-layer.correct { background: rgba(24, 170, 100, 0.92); }
+    #flash-layer.pass { background: rgba(232, 122, 32, 0.92); }
+
+    #rotate-hint {
+      top: auto; height: auto; padding: 8px;
+      align-items: flex-start; justify-content: center;
+      pointer-events: none;
+    }
+    #rotate-hint span {
+      background: rgba(0,0,0,0.55);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    body.landscape #rotate-hint { display: none; }
+
+    /* ===== END ===== */
+    #screen-end {
+      position: fixed; inset: 0; z-index: 30;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: calc(24px + var(--safe-t)) 20px calc(16px + var(--safe-b));
+      background:
+        radial-gradient(900px 500px at 50% -10%, rgba(255,209,102,0.18), transparent 50%),
+        var(--bg);
+    }
+    .end-inner {
+      max-width: 720px; margin: 0 auto; width: 100%;
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+    }
+    .score-hero { text-align: center; margin-bottom: 18px; flex: 0 0 auto; }
+    .score-hero h2 { margin: 0; font-size: clamp(3rem, 12vw, 5.5rem); letter-spacing: -0.05em; }
+    .score-hero p { margin: 4px 0 0; color: var(--muted); font-size: 1.1rem; }
+    @media (max-height: 520px) {
+      .score-hero { margin-bottom: 8px; }
+      .score-hero h2 { font-size: clamp(2.1rem, 16vh, 3.4rem); }
+      #screen-end { padding-top: calc(10px + var(--safe-t)); }
+    }
+    .results {
+      list-style: none; padding: 0; margin: 0 0 14px;
+      border: 1px solid var(--line); border-radius: 16px;
+      overflow: auto;
+      flex: 0 1 auto;
+      min-height: 0;
+      background: rgba(255,255,255,0.03);
+    }
+    .results li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px;
+      border-top: 1px solid var(--line);
+      font-weight: 700;
+    }
+    .results li:first-child { border-top: 0; }
+    .results li.ok { color: #b8ffd9; }
+    .results li.no { color: #c9c3d6; }
+    .results li i {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: grid; place-items: center; font-style: normal; font-weight: 800;
+      flex: 0 0 auto;
+    }
+    .results li.ok i { background: rgba(34,214,138,0.2); color: var(--green); }
+    .results li.no i { background: rgba(255,255,255,0.08); color: #9a93ae; }
+    .end-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; flex: 0 0 auto; }
+    .end-actions .primary, .end-actions .text-btn { min-width: 140px; text-align: center; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: calc(20px + var(--safe-b));
+      transform: translateX(-50%) translateY(20px);
+      background: #221d3a; color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 999px; padding: 10px 16px;
+      font-weight: 700; z-index: 80;
+      opacity: 0; pointer-events: none;
+      transition: 0.2s ease;
+      max-width: calc(100% - 24px);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <section id="screen-home">
+      <header class="hero">
+        <div>
+          <h1 class="logo"><span>Heads Up!</span></h1>
+          <p class="tagline">Hold the device to your forehead. Friends give you clues — no saying the word itself. Tilt or tap to score.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings">⚙️</button>
+          <button class="icon-btn" id="btn-create" title="Create category" aria-label="Create category">➕</button>
+        </div>
+      </header>
+
+      <div class="toolbar">
+        <div class="search">
+          <span class="mag" aria-hidden="true">🔍</span>
+          <input id="search" type="search" placeholder="Search categories…" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="toolbar-btns">
+          <button class="text-btn gold" id="btn-random">🎲 Random category</button>
+          <button class="text-btn mint" id="btn-mix">🌈 Mix of everything</button>
+        </div>
+      </div>
+
+      <div id="grid" class="grid"></div>
+
+      <footer class="home-foot">
+        <div>Built-in and custom decks play with no internet.</div>
+        <div class="row">
+          <button class="ghost text-btn" id="btn-export">Export all</button>
+          <button class="ghost text-btn" id="btn-import">Import JSON</button>
+          <input id="import-file" type="file" accept="application/json,.json" class="hidden">
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <div id="screen-settings" class="overlay-screen hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="panel">
+      <h2 id="settings-title">Settings</h2>
+      <p class="lead">Saved on this device for the next party.</p>
+
+      <div class="field">
+        <label>Round length</label>
+        <div class="seg" id="duration-seg">
+          <button type="button" data-dur="30">30s</button>
+          <button type="button" data-dur="60">60s</button>
+          <button type="button" data-dur="90">90s</button>
+          <button type="button" data-dur="120">120s</button>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div><strong>Sound</strong><span>Short beeps, no audio files needed</span></div>
+        <button type="button" class="switch" id="tog-sound" aria-pressed="true" aria-label="Sound"><i></i></button>
+      </div>
+      <div class="toggle-row">
+        <div><strong>Tilt controls</strong><span>Down = got it, up = pass. Needs a permission tap on iPhone.</span></div>
+        <button type="button" class="switch" id="tog-tilt" aria-pressed="true" aria-label="Tilt controls"><i></i></button>
+      </div>
+      <div class="hint">
+        Tilt only works in a secure context (HTTPS or localhost). Opening this file directly (<code>file://</code>) or over plain HTTP is fine — just use taps or a keyboard instead. On iPhone, tap <strong>Enable tilt</strong> below (or Start) to allow motion access.
+      </div>
+      <div class="panel-actions">
+        <button class="primary" id="btn-tilt-perm">Enable tilt</button>
+        <button class="text-btn" id="btn-settings-close">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-editor" class="overlay-screen hidden" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+    <div class="panel">
+      <h2 id="editor-title">Create category</h2>
+      <p class="lead">One word or phrase per line. You can edit or delete it later.</p>
+      <div class="field">
+        <label for="ed-name">Name</label>
+        <input id="ed-name" type="text" maxlength="40" placeholder="e.g. Burbank Landmarks">
+      </div>
+      <div class="field">
+        <label for="ed-emoji">Emoji (optional)</label>
+        <input id="ed-emoji" type="text" maxlength="8" placeholder="🎬">
+      </div>
+      <div class="field">
+        <label for="ed-desc">Description (optional)</label>
+        <input id="ed-desc" type="text" maxlength="120" placeholder="A short hint for the deck">
+      </div>
+      <div class="field">
+        <label for="ed-words">Words — one per line</label>
+        <textarea id="ed-words" placeholder="Gaffer tape&#10;Slate&#10;Boom mic"></textarea>
+      </div>
+      <div class="panel-actions">
+        <button class="primary" id="btn-editor-save">Save category</button>
+        <button class="text-btn" id="btn-editor-cancel">Cancel</button>
+        <button class="danger-btn hidden" id="btn-editor-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="screen-play" class="hidden" aria-live="polite">
+    <div class="play-top">
+      <div class="cat-chip" id="play-cat"></div>
+      <div class="timer" id="play-timer">0:60</div>
+      <button class="end-now" id="btn-end-now">End</button>
+    </div>
+    <div class="play-stage">
+      <button class="hit-zone pass" id="zone-pass" type="button">PASS</button>
+      <button class="hit-zone got" id="zone-got" type="button">GOT IT</button>
+      <div class="word-wrap"><p id="word"></p></div>
+    </div>
+    <div id="countdown-layer" class="hidden"><div id="count-num">3</div></div>
+    <div id="flash-layer"></div>
+    <div id="rotate-hint"><span>↻ Turn sideways for the best view</span></div>
+  </section>
+
+  <section id="screen-end" class="hidden">
+    <div class="end-inner">
+      <div class="score-hero">
+        <h2 id="end-score">0</h2>
+        <p id="end-sub"></p>
+      </div>
+      <ul class="results" id="end-list"></ul>
+      <div class="end-actions">
+        <button class="primary" id="btn-again">Play again</button>
+        <button class="text-btn" id="btn-home">Home</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+  const BUILTIN_DB = {"categories":[{"id":"movies","name":"Movies","emoji":"🎬","description":"Classic and popular films to act out or describe","words":["The Godfather","Titanic","Jurassic Park","Jaws","E.T. the Extra-Terrestrial","The Wizard of Oz","Casablanca","Psycho","The Sound of Music","It's a Wonderful Life","The Shining","The Silence of the Lambs","The Matrix","Inception","Interstellar","The Dark Knight","Pulp Fiction","Forrest Gump","Saving Private Ryan","Schindler's List","Raiders of the Lost Ark","Back to the Future","Ghostbusters","The Goonies","Home Alone","The Breakfast Club","Ferris Bueller's Day Off","Dirty Dancing","Pretty Woman","Top Gun","Die Hard","The Terminator","Terminator 2: Judgment Day","Alien","Aliens","Predator","Blade Runner","Mad Max: Fury Road","The Lord of the Rings","The Hobbit","Avatar","The Avengers","Iron Man","Black Panther","Spider-Man","Wonder Woman","Frozen","The Lion King","Toy Story","Finding Nemo","Shrek","The Incredibles","Up","Coco","Inside Out","Moana","Encanto","Beauty and the Beast","The Little Mermaid","Aladdin","Rocky","Goodfellas","The Shawshank Redemption","The Green Mile","Cast Away","Gladiator","Braveheart","Apollo 13","The Martian","Oppenheimer","Barbie","La La Land","The Greatest Showman","Grease","Mamma Mia!","Mary Poppins","The Princess Bride","Labyrinth","The NeverEnding Story","Hook","Mrs. Doubtfire","The Mask","Dumb and Dumber","Anchorman","Mean Girls","Clueless","Legally Blonde","The Hunger Games","The Notebook","The Devil Wears Prada","Ocean's Eleven","Mission: Impossible","Casino Royale","Skyfall","The Bourne Identity","John Wick","Independence Day","Men in Black","Beetlejuice","Edward Scissorhands","Willy Wonka & the Chocolate Factory","The Karate Kid","The Sandlot","A Christmas Story","Elf","National Lampoon's Christmas Vacation","Who Framed Roger Rabbit","King Kong","Godzilla","Jurassic World"]},{"id":"movie-quotes","name":"Famous Movie Quotes","emoji":"💬","description":"Iconic lines from the movies — say it like the character","words":["I'll be back","May the Force be with you","Here's looking at you, kid","I'll have what she's having","You can't handle the truth!","Houston, we have a problem","I'm the king of the world!","E.T. phone home","To infinity and beyond!","Just keep swimming","There's no place like home","I see dead people","Why so serious?","No, I am your father","Life finds a way","You're gonna need a bigger boat","Roads? Where we're going we don't need roads","Nobody puts Baby in a corner","Toto, I've a feeling we're not in Kansas anymore","Go ahead, make my day","Say hello to my little friend","Keep your friends close, but your enemies closer","I'm walking here!","You talking to me?","Here's Johnny!","I feel the need... the need for speed","Show me the money!","You had me at hello","My precious","You shall not pass!","With great power comes great responsibility","Why is the rum gone?","This is Sparta!","Are you not entertained?","I volunteer as tribute","As you wish","Inconceivable!","Hello. My name is Inigo Montoya","That'll do, pig","Bond. James Bond.","Shaken, not stirred","You're a wizard, Harry","I solemnly swear that I am up to no good","Use the Force, Luke","Do or do not, there is no try","These aren't the droids you're looking for","I have a bad feeling about this","Wax on, wax off","There is no spoon","Take the red pill","Hasta la vista, baby","Come with me if you want to live","Get to the chopper!","If you build it, he will come","I'm melting!","Pay no attention to that man behind the curtain","There's no crying in baseball","On Wednesdays we wear pink","It's so fluffy!","Do you want to build a snowman?","Let it go","Hakuna Matata","Supercalifragilisticexpialidocious","Snakes. Why did it have to be snakes?","It belongs in a museum","After all, tomorrow is another day","Stella!","I'm also just a girl, standing in front of a boy","You complete me","I am Groot","I can do this all day","Avengers, assemble!","Leave the gun, take the cannoli","I'm not bad, I'm just drawn that way","It's alive!","Run, Forrest, run!","Mama always said life was like a box of chocolates","You're killing me, Smalls","Help me, Obi-Wan Kenobi. You're my only hope","It's just a flesh wound","Carpe diem. Seize the day, boys","That is so fetch","I'm flying!","I am serious. And don't call me Shirley"]},{"id":"tv-shows","name":"TV Shows","emoji":"📺","description":"Beloved series from every era of television","words":["Friends","Seinfeld","The Office","Parks and Recreation","Brooklyn Nine-Nine","The Big Bang Theory","How I Met Your Mother","Cheers","Frasier","The Golden Girls","I Love Lucy","The Andy Griffith Show","M*A*S*H","Happy Days","The Brady Bunch","Gilligan's Island","The Twilight Zone","Star Trek","Star Trek: The Next Generation","Doctor Who","The X-Files","Lost","Breaking Bad","Better Call Saul","Game of Thrones","Stranger Things","The Mandalorian","The Crown","Downton Abbey","Sherlock","House","Grey's Anatomy","ER","Law & Order","CSI","NCIS","Bones","Criminal Minds","The Walking Dead","Supernatural","Buffy the Vampire Slayer","The West Wing","The Simpsons","Family Guy","South Park","SpongeBob SquarePants","Avatar: The Last Airbender","Adventure Time","Steven Universe","Phineas and Ferb","Sesame Street","Mister Rogers' Neighborhood","Barney & Friends","Blue's Clues","Dora the Explorer","Arthur","Thomas & Friends","The Magic School Bus","Bill Nye the Science Guy","Reading Rainbow","Saved by the Bell","Full House","The Fresh Prince of Bel-Air","Family Matters","Boy Meets World","Gilmore Girls","Dawson's Creek","Beverly Hills, 90210","Gossip Girl","Pretty Little Liars","The Marvelous Mrs. Maisel","Ted Lasso","Schitt's Creek","Community","Arrested Development","The Good Place","Modern Family","Black-ish","Abbott Elementary","Only Murders in the Building","Wednesday","The Bear","Succession","Yellowstone","Ozark","Money Heist","Squid Game","Dark","The Witcher","The Boys","WandaVision","Loki","What We Do in the Shadows","Our Flag Means Death","The Last of Us","American Idol","The Voice","Survivor","The Amazing Race","Jeopardy!","Wheel of Fortune","The Price Is Right","Family Feud","Saturday Night Live","The Tonight Show"]},{"id":"animals","name":"Animals","emoji":"🐾","description":"Creatures from land, sea, and sky","words":["Lion","Tiger","Leopard","Cheetah","Jaguar","Elephant","Giraffe","Zebra","Hippopotamus","Rhinoceros","Gorilla","Chimpanzee","Orangutan","Baboon","Lemur","Panda","Koala","Kangaroo","Wallaby","Platypus","Grizzly Bear","Polar Bear","Sloth","Anteater","Wolf","Fox","Coyote","Hyena","Jackal","Dog","Cat","Horse","Donkey","Mule","Cow","Pig","Sheep","Goat","Chicken","Rooster","Duck","Goose","Turkey","Swan","Eagle","Hawk","Owl","Parrot","Penguin","Flamingo","Pelican","Toucan","Hummingbird","Peacock","Dolphin","Whale","Orca","Shark","Stingray","Octopus","Squid","Jellyfish","Starfish","Seahorse","Crab","Lobster","Shrimp","Clownfish","Goldfish","Turtle","Tortoise","Alligator","Crocodile","Iguana","Snake","Python","Cobra","Lizard","Chameleon","Frog","Toad","Salamander","Newt","Axolotl","Butterfly","Bee","Ant","Ladybug","Dragonfly","Spider","Scorpion","Snail","Worm","Caterpillar","Rabbit","Hare","Squirrel","Chipmunk","Raccoon","Skunk","Otter","Beaver","Hedgehog","Porcupine","Camel","Llama","Alpaca","Moose","Deer","Elk","Reindeer","Bison","Buffalo","Yak","Bat","Mole","Mouse","Rat","Hamster"]},{"id":"celebrities","name":"Celebrities","emoji":"🌟","description":"Famous faces from film, TV, sports, and music","words":["Tom Hanks","Meryl Streep","Denzel Washington","Leonardo DiCaprio","Brad Pitt","Angelina Jolie","Jennifer Lawrence","Sandra Bullock","Julia Roberts","Nicole Kidman","Tom Cruise","Will Smith","Johnny Depp","Robert Downey Jr.","Chris Hemsworth","Chris Evans","Chris Pratt","Scarlett Johansson","Natalie Portman","Anne Hathaway","Emma Stone","Emma Watson","Daniel Radcliffe","Rupert Grint","Harrison Ford","Robin Williams","Jim Carrey","Eddie Murphy","Steve Martin","Bill Murray","Adam Sandler","Keanu Reeves","Morgan Freeman","Samuel L. Jackson","Whoopi Goldberg","Oprah Winfrey","Ellen DeGeneres","Stephen Colbert","Jimmy Fallon","Trevor Noah","Ryan Reynolds","Hugh Jackman","Patrick Stewart","Ian McKellen","Anthony Hopkins","Kate Winslet","Cate Blanchett","Charlize Theron","Viola Davis","Halle Berry","Zendaya","Timothée Chalamet","Florence Pugh","Margot Robbie","Ryan Gosling","Lady Gaga","Beyoncé","Taylor Swift","Adele","Rihanna","Justin Bieber","Bruno Mars","Ed Sheeran","Harry Styles","Billie Eilish","Vin Diesel","Jason Momoa","Gal Gadot","Zoe Saldaña","Jackie Chan","Jet Li","Michelle Yeoh","Simu Liu","Awkwafina","Michael Jordan","LeBron James","Serena Williams","Tiger Woods","Simone Biles","Tom Brady","Lionel Messi","Cristiano Ronaldo","Usain Bolt","Shaun White","Steven Spielberg","Martin Scorsese","Quentin Tarantino","Greta Gerwig","Christopher Nolan","Walt Disney","Stan Lee","George Lucas","James Cameron","Alfred Hitchcock","Marilyn Monroe","Audrey Hepburn","Elvis Presley","Michael Jackson","Princess Diana","The Rock","John Cena","Betty White","Carol Burnett","Lucille Ball","Pedro Pascal","Austin Butler","Sydney Sweeney","Jenna Ortega"]},{"id":"musicians","name":"Musicians","emoji":"🎤","description":"Singers, bands, and musicians everyone knows","words":["The Beatles","The Rolling Stones","The Who","The Doors","Led Zeppelin","Pink Floyd","Queen","AC/DC","Aerosmith","Bon Jovi","U2","The Police","The Eagles","Fleetwood Mac","ABBA","The Beach Boys","The Supremes","The Temptations","The Jackson 5","Earth, Wind & Fire","Elvis Presley","Johnny Cash","Bob Dylan","Chuck Berry","Little Richard","Aretha Franklin","Whitney Houston","Mariah Carey","Celine Dion","Tina Turner","Madonna","Michael Jackson","Prince","Stevie Wonder","Elton John","David Bowie","Freddie Mercury","Paul McCartney","John Lennon","George Harrison","Bruce Springsteen","Billy Joel","Phil Collins","Sting","Peter Gabriel","Cyndi Lauper","Janet Jackson","Paula Abdul","Nirvana","Pearl Jam","Soundgarden","Red Hot Chili Peppers","Green Day","Foo Fighters","Radiohead","Coldplay","Oasis","The Killers","Beyoncé","Destiny's Child","Rihanna","Alicia Keys","Usher","Jay-Z","Kanye West","Eminem","Drake","Lizzo","Taylor Swift","Adele","Ed Sheeran","Bruno Mars","Justin Timberlake","NSYNC","Backstreet Boys","Spice Girls","One Direction","BTS","Lady Gaga","Katy Perry","Kesha","P!nk","Kelly Clarkson","Billie Eilish","Olivia Rodrigo","Sabrina Carpenter","Harry Styles","The Weeknd","Shakira","Jennifer Lopez","Selena","Gloria Estefan","Ricky Martin","Luis Miguel","Bad Bunny","Lin-Manuel Miranda","Hugh Jackman","Idina Menzel","Andrea Bocelli","Luciano Pavarotti","Yo-Yo Ma","Lindsey Stirling","Hans Zimmer","John Williams","Andrew Lloyd Webber","Stephen Sondheim","Dolly Parton","Willie Nelson","Garth Brooks","Shania Twain","Carrie Underwood","Luke Bryan","Reba McEntire","Kenny Rogers","The Chicks"]},{"id":"songs","name":"Songs","emoji":"🎵","description":"Hit songs you can hum, sing, or act out","words":["Bohemian Rhapsody","Don't Stop Believin'","Billie Jean","Thriller","Beat It","Like a Prayer","Sweet Child o' Mine","Smells Like Teen Spirit","Wonderwall","Hey Jude","Let It Be","Yesterday","Hotel California","Stairway to Heaven","Imagine","Purple Rain","Superstition","Respect","I Will Always Love You","My Heart Will Go On","Dancing Queen","Waterloo","Stayin' Alive","Y.M.C.A.","Celebration","Uptown Funk","Happy","Shake It Off","Blank Space","Love Story","Rolling in the Deep","Hello","Someone Like You","Single Ladies","Halo","Umbrella","Shape of You","Perfect","Thinking Out Loud","Blinding Lights","Old Town Road","Flowers","Anti-Hero","Sweet Caroline","Don't Stop Me Now","We Will Rock You","We Are the Champions","Another One Bites the Dust","Livin' on a Prayer","Eye of the Tiger","Take On Me","Girls Just Want to Have Fun","Time After Time","I Wanna Dance with Somebody","I Will Survive","September","Lean on Me","Africa","Don't You (Forget About Me)","Everybody Wants to Rule the World","Sweet Dreams (Are Made of This)","Jessie's Girl","Summer of '69","Jump","Every Breath You Take","With or Without You","Mr. Brightside","Seven Nation Army","Back in Black","Thunderstruck","Enter Sandman","Smoke on the Water","Johnny B. Goode","Jailhouse Rock","Can't Help Falling in Love","Ring of Fire","Jolene","Take Me Home, Country Roads","Piano Man","New York, New York","Fly Me to the Moon","My Way","What a Wonderful World","Over the Rainbow","Let It Go","A Whole New World","Under the Sea","Hakuna Matata","You've Got a Friend in Me","Circle of Life","We Don't Talk About Bruno","How Far I'll Go","Remember Me","Wannabe","Baby One More Time","I Want It That Way","Bye Bye Bye","Macarena","All I Want for Christmas Is You","Jingle Bells","Happy Birthday","Auld Lang Syne","The Imperial March","Ghostbusters","I Want to Hold Your Hand"]},{"id":"superheroes","name":"Superheroes","emoji":"🦸","description":"Heroes, villains, and comic-book icons","words":["Superman","Batman","Wonder Woman","Spider-Man","Iron Man","Captain America","Thor","Hulk","Black Widow","Hawkeye","Black Panther","Doctor Strange","Scarlet Witch","Vision","Ant-Man","Wasp","Captain Marvel","Ms. Marvel","Falcon","Winter Soldier","Star-Lord","Gamora","Drax","Rocket Raccoon","Groot","Nebula","Mantis","Nick Fury","Loki","Thanos","Ultron","Red Skull","Green Goblin","Doctor Octopus","Venom","Miles Morales","Spider-Gwen","Mary Jane Watson","Aunt May","Uncle Ben","Alfred Pennyworth","Commissioner Gordon","Robin","Nightwing","Batgirl","Catwoman","The Joker","Harley Quinn","The Riddler","The Penguin","Two-Face","Poison Ivy","Mr. Freeze","Bane","Ra's al Ghul","The Flash","Green Lantern","Aquaman","Cyborg","Shazam","Green Arrow","Supergirl","Superboy","Martian Manhunter","Zatanna","Swamp Thing","Hawkman","Hawkgirl","The Atom","Lex Luthor","General Zod","Doomsday","Darkseid","Brainiac","Deathstroke","Sinestro","Cheetah","Black Manta","Wolverine","Cyclops","Jean Grey","Professor X","Storm","Beast","Nightcrawler","Rogue","Gambit","Iceman","Magneto","Mystique","Sabretooth","Deadpool","Cable","Daredevil","Jessica Jones","Luke Cage","Iron Fist","The Punisher","Ghost Rider","Blade","Moon Knight","She-Hulk","The Incredibles","Elastigirl","Dash","Violet","Jack-Jack","Frozone","Syndrome","Mr. Incredible","Static Shock","Blue Beetle"]},{"id":"video-games","name":"Video Games","emoji":"🎮","description":"Classic and modern games, characters, and consoles","words":["Super Mario Bros.","The Legend of Zelda","Donkey Kong","Metroid","Kirby","Star Fox","Pokémon","Animal Crossing","Splatoon","Pikmin","Super Smash Bros.","Mario Kart","Mario Party","Yoshi's Island","Luigi's Mansion","Sonic the Hedgehog","Tails","Knuckles","Shadow the Hedgehog","Dr. Eggman","Pac-Man","Ms. Pac-Man","Tetris","Space Invaders","Asteroids","Pong","Frogger","Centipede","Galaga","Street Fighter","Mortal Kombat","Tekken","Soulcalibur","Killer Instinct","Injustice","Final Fantasy","Dragon Quest","Chrono Trigger","Secret of Mana","Kingdom Hearts","The Elder Scrolls V: Skyrim","The Witcher 3","Dark Souls","Elden Ring","Bloodborne","World of Warcraft","Minecraft","Roblox","Fortnite","Among Us","Call of Duty","Halo","Gears of War","Destiny","Overwatch","Grand Theft Auto","Red Dead Redemption","The Last of Us","Uncharted","God of War","Horizon Zero Dawn","Spider-Man","Batman: Arkham City","Assassin's Creed","Far Cry","BioShock","Portal","Half-Life","Team Fortress 2","Counter-Strike","League of Legends","Dota 2","Valorant","Apex Legends","Rocket League","FIFA","Madden NFL","NBA 2K","Tony Hawk's Pro Skater","Wii Sports","Just Dance","Guitar Hero","Rock Band","Dance Dance Revolution","Beat Saber","The Sims","SimCity","Civilization","Age of Empires","StarCraft","Stardew Valley","Terraria","Hades","Celeste","Undertale","Cuphead","Fall Guys","It Takes Two","Overcooked","Jackbox Party Pack","GoldenEye 007","Super Mario 64","The Legend of Zelda: Ocarina of Time","Pokémon Red and Blue","Clash of Clans","Candy Crush","Angry Birds","Fruit Ninja","Flappy Bird","Temple Run","Crossy Road"]},{"id":"cartoons","name":"Cartoons","emoji":"✏️","description":"Animated shows, characters, and Saturday-morning classics","words":["Mickey Mouse","Minnie Mouse","Donald Duck","Goofy","Pluto","Bugs Bunny","Daffy Duck","Porky Pig","Elmer Fudd","Tweety Bird","Sylvester","Wile E. Coyote","Road Runner","Tasmanian Devil","Yosemite Sam","Tom and Jerry","Popeye","Olive Oyl","Betty Boop","Felix the Cat","Scooby-Doo","Shaggy","Velma","Daphne","Fred Jones","The Flintstones","Fred Flintstone","Wilma Flintstone","Barney Rubble","The Jetsons","Yogi Bear","Boo-Boo Bear","Huckleberry Hound","Top Cat","Hong Kong Phooey","SpongeBob SquarePants","Patrick Star","Squidward","Mr. Krabs","Sandy Cheeks","Plankton","Gary the Snail","Pearl Krabs","Mrs. Puff","The Flying Dutchman","The Simpsons","Homer Simpson","Marge Simpson","Bart Simpson","Lisa Simpson","Maggie Simpson","Ned Flanders","Mr. Burns","Krusty the Clown","Groundskeeper Willie","Rugrats","Tommy Pickles","Chuckie Finster","Angelica Pickles","Reptar","Doug","Hey Arnold!","Helga","Gerald","Phoebe","The Fairly OddParents","Timmy Turner","Cosmo","Wanda","Vicky","Jimmy Neutron","Carl Wheezer","Sheen","Cindy Vortex","Goddard","Dexter's Laboratory","Dee Dee","The Powerpuff Girls","Blossom","Bubbles","Buttercup","Professor Utonium","Mojo Jojo","Townsville","The Mayor","Johnny Bravo","Cow and Chicken","Ed, Edd n Eddy","Courage the Cowardly Dog","Samurai Jack","Teen Titans","Robin","Starfire","Cyborg","Beast Boy","Raven","Teen Titans Go!","Ben 10","Generator Rex","Regular Show","Adventure Time","Finn the Human","Jake the Dog","Princess Bubblegum","Ice King","Steven Universe","Garnet","Amethyst","Pearl","Peridot","Gravity Falls","Dipper Pines","Mabel Pines","Grunkle Stan","Soos","Phineas and Ferb","Perry the Platypus","Dr. Doofenshmirtz","Candace","Isabella","Kim Possible","Ron Stoppable","Rufus","Shego","Dr. Drakken","Recess","The Magic School Bus","Arthur","Cyberchase","Wild Kratts","PAW Patrol","Bluey","Peppa Pig","Dora the Explorer","Diego","Teenage Mutant Ninja Turtles","Leonardo","Michelangelo","Donatello","Raphael","Splinter","Shredder","April O'Neil","Casey Jones","Krang","Transformers","Optimus Prime","Bumblebee","Megatron","Starscream","G.I. Joe","He-Man","She-Ra","Skeletor","Battle Cat","Thundercats","Lion-O","Cheetara","Panthro","Mumm-Ra","Voltron","Care Bears","My Little Pony","Strawberry Shortcake","Rainbow Brite","Inspector Gadget","Penny","Brain","Dr. Claw","Darkwing Duck","Launchpad McQuack","Chip 'n Dale","Rescue Rangers","TaleSpin","DuckTales","Scrooge McDuck","Huey, Dewey, and Louie","Webby Vanderquack","Animaniacs","Yakko","Wakko","Dot","Pinky and the Brain","Freakazoid","Tiny Toon Adventures","Buster Bunny","Babs Bunny","Plucky Duck"]},{"id":"foods","name":"Foods","emoji":"🍕","description":"Meals, snacks, sweets, and drinks to mime or describe","words":["Pizza","Hamburger","Cheeseburger","Hot Dog","French Fries","Onion Rings","Chicken Nuggets","Fried Chicken","Taco","Burrito","Quesadilla","Nachos","Enchilada","Tostada","Guacamole","Sushi","Ramen","Pad Thai","Fried Rice","Dumplings","Spring Roll","Egg Roll","Pho","Curry","Naan","Spaghetti","Lasagna","Ravioli","Fettuccine Alfredo","Macaroni and Cheese","Pizza Margherita","Garlic Bread","Meatballs","Caesar Salad","Garden Salad","Soup","Tomato Soup","Chicken Noodle Soup","Clam Chowder","Chili","Grilled Cheese","BLT Sandwich","Club Sandwich","Peanut Butter and Jelly","Turkey Sandwich","Pancakes","Waffles","French Toast","Oatmeal","Cereal","Scrambled Eggs","Fried Eggs","Omelette","Bacon","Sausage","Hash Browns","Bagel","Croissant","Muffin","Donut","Cinnamon Roll","Toast","Butter","Jam","Cream Cheese","Apple","Banana","Orange","Strawberry","Blueberry","Grape","Watermelon","Pineapple","Mango","Kiwi","Peach","Pear","Cherry","Lemon","Lime","Avocado","Tomato","Cucumber","Carrot","Broccoli","Corn on the Cob","Potato","Mashed Potatoes","Baked Potato","Sweet Potato","Green Beans","Peas","Spinach","Lettuce","Onion","Garlic","Mushroom","Bell Pepper","Jalapeño","Celery","Ice Cream","Milkshake","Sundae","Banana Split","Popsicle","Chocolate Cake","Cheesecake","Apple Pie","Pumpkin Pie","Brownie","Cookie","Chocolate Chip Cookie","Cupcake","Candy Bar","Lollipop","Gummy Bears","Cotton Candy","Popcorn","Pretzel","Potato Chips","Cheese Puffs","Trail Mix","Granola Bar","Yogurt","Cheese","Cheddar","Mozzarella","Parmesan","Swiss Cheese","Milk","Chocolate Milk","Orange Juice","Apple Juice","Lemonade","Iced Tea","Hot Chocolate","Coffee","Espresso","Cappuccino","Smoothie","Root Beer Float","Water","Soda","Steak","Pork Chop","Meatloaf","Ribs","Roast Chicken","Salmon","Tuna","Shrimp","Lobster","Crab","Falafel","Hummus","Pita","Gyro","Kebab"]},{"id":"sports","name":"Sports","emoji":"⚽","description":"Sports, famous athletes, and game-day moments","words":["Soccer","Football","Basketball","Baseball","Softball","Hockey","Ice Hockey","Field Hockey","Tennis","Table Tennis","Golf","Bowling","Volleyball","Beach Volleyball","Badminton","Rugby","Cricket","Lacrosse","Water Polo","Swimming","Diving","Synchronized Swimming","Gymnastics","Figure Skating","Speed Skating","Skiing","Downhill Skiing","Cross-Country Skiing","Snowboarding","Ski Jumping","Ice Skating","Bobsled","Luge","Curling","Hockey Shootout","Track and Field","Sprinting","Marathon","Relay Race","Hurdles","Long Jump","High Jump","Pole Vault","Shot Put","Javelin","Discus","Hammer Throw","Triathlon","Decathlon","Pentathlon","Boxing","Wrestling","Fencing","Judo","Taekwondo","Karate","Kickboxing","Mixed Martial Arts","Sumo Wrestling","Archery","Shooting","Horseback Riding","Show Jumping","Dressage","Polo","Cycling","Mountain Biking","BMX","Skateboarding","Roller Skating","Roller Derby","Surfing","Windsurfing","Kite Surfing","Sailing","Rowing","Canoeing","Kayaking","Whitewater Rafting","Fishing","Rock Climbing","Bouldering","Mountaineering","Hiking","Trail Running","Weightlifting","Powerlifting","Bodybuilding","CrossFit","Yoga","Cheerleading","Dance","Esports","Auto Racing","NASCAR","Formula 1","IndyCar","Motocross","Rally Racing","Drag Racing","Super Bowl","World Cup","World Series","NBA Finals","Stanley Cup","Olympics","Paralympics","Wimbledon","The Masters","Tour de France","Home Run","Touchdown","Slam Dunk","Hat Trick","Hole in One","Penalty Kick","Free Throw","Three-Pointer","Strikeout","Grand Slam","Offside","Foul","Time-Out","Overtime","Photo Finish","Cheerleader","Referee","Umpire","Coach","Mascot","Trophy","Gold Medal","Silver Medal","Bronze Medal","Podium"]},{"id":"act-it-out","name":"Act It Out","emoji":"🎭","description":"Actions and everyday activities — no talking, just mime","words":["Swimming","Running","Jogging","Sprinting","Skipping","Jumping rope","Hopping","Dancing","Moonwalking","Breakdancing","Ballet","Tap dancing","Yoga","Stretching","Doing push-ups","Lifting weights","Doing a cartwheel","Doing a somersault","Hula hooping","Juggling","Brushing your teeth","Flossing","Brushing your hair","Washing your face","Taking a shower","Washing dishes","Vacuuming","Sweeping","Mopping","Folding laundry","Ironing a shirt","Making the bed","Taking out the trash","Mowing the lawn","Raking leaves","Shoveling snow","Gardening","Watering plants","Planting a tree","Picking flowers","Cooking","Chopping vegetables","Stir-frying","Flipping pancakes","Cracking an egg","Baking a cake","Frosting a cake","Kneading dough","Tossing a pizza","Blending a smoothie","Eating spaghetti","Eating soup","Drinking through a straw","Blowing out candles","Opening a present","Wrapping a gift","Tying a tie","Tying your shoes","Putting on a coat","Putting on makeup","Shaving","Combing your hair","Putting in contact lenses","Wearing glasses","Sneezing","Coughing","Yawning","Stretching when you wake up","Sleeping","Snoring","Sleepwalking","Rocking a baby","Pushing a stroller","Walking a dog","Teaching a dog to sit","Riding a horse","Riding a bike","Riding a skateboard","Riding a scooter","Roller skating","Ice skating","Skiing","Snowboarding","Surfing","Paddling a canoe","Rowing a boat","Fishing","Casting a line","Reeling in a fish","Building a sandcastle","Flying a kite","Playing catch","Throwing a football","Shooting a basketball","Swinging a baseball bat","Serving a tennis ball","Spiking a volleyball","Kicking a soccer ball","Hitting a golf ball","Bowling","Playing the piano","Playing the guitar","Playing the drums","Playing the violin","Conducting an orchestra","Singing into a microphone","DJing","Taking a photo","Recording a video","Texting on a phone","Typing on a keyboard","Writing with a pencil","Painting","Drawing","Sculpting","Climbing a ladder","Climbing a rope","Opening a stubborn jar","Hammering a nail","Sawing wood","Screwdriving","Painting a wall","Hanging a picture","Changing a light bulb","Jump-starting a car","Driving a car","Parallel parking","Changing a tire","Pumping gas","Washing a car","Hailing a taxi","Waiting in line","Going through airport security","Boarding an airplane","Zipping a suitcase","Looking through binoculars","Using a telescope","Reading a map","Using a compass","Pitching a tent","Starting a campfire","Roasting marshmallows","Telling a ghost story","Hiding","Playing peekaboo"]},{"id":"accents-impressions","name":"Accents & Impressions","emoji":"🗣️","description":"Do the voice! Accents, characters, and famous impressions","words":["British accent","Australian accent","Southern accent","New York accent","Boston accent","French accent","Italian accent","German accent","Spanish accent","Irish accent","Scottish accent","Russian accent","Indian accent","Japanese accent","Mexican accent","Canadian accent","Jamaican accent","Pirate","Cowboy","Robot","Yoda","Darth Vader","C-3PO","Gollum","Gandalf","Hagrid","Dumbledore","Harry Potter","Hermione Granger","Ron Weasley","Elvis Presley","Johnny Cash","Dolly Parton","Willie Nelson","Bob Dylan","Christopher Walken","Arnold Schwarzenegger","Morgan Freeman","Sean Connery","James Earl Jones","The Queen of England","A royal butler","A surfer","A valley girl","A news anchor","A sports commentator","An auctioneer","An opera singer","A country singer","A rapper","A baby","A grumpy old man","A drill sergeant","A game show host","A movie trailer voice","A radio DJ","A flight attendant","A GPS voice","Siri","A robot butler","Mickey Mouse","Donald Duck","Goofy","Kermit the Frog","Miss Piggy","Cookie Monster","Elmo","Big Bird","Oscar the Grouch","SpongeBob SquarePants","Patrick Star","Homer Simpson","Ned Flanders","Mr. Burns","Peter Griffin","Buzz Lightyear","Woody","Shrek","Donkey","Dory","Jack Sparrow","Captain Hook","Peter Pan","The Wicked Witch","Glinda the Good Witch","Cruella de Vil","Ursula","Maleficent","Jafar","Scar","Batman","The Joker","Superman","Spock","Captain Kirk","Doctor Who","Indiana Jones","Han Solo","Chewbacca","William Shatner","Nicolas Cage","Keanu Reeves","Matthew McConaughey","Jeff Goldblum","Bill Murray","Robin Williams","Jim Carrey","Eddie Murphy","Mike Tyson","John Wayne","Clint Eastwood","Humphrey Bogart","Marilyn Monroe","Audrey Hepburn","Dracula","Frankenstein's monster","A mummy","A zombie","A ghost","A witch","A wizard","A giant","A mouse","A sloth","A chipmunk","A donkey bray","A rooster","A cat","A dog"]},{"id":"places-landmarks","name":"Places & Landmarks","emoji":"🗺️","description":"Famous places, monuments, and destinations","words":["Eiffel Tower","Statue of Liberty","The White House","The Capitol Building","Mount Rushmore","Grand Canyon","Niagara Falls","Yellowstone","Yosemite","The Golden Gate Bridge","Hollywood Sign","Disneyland","Walt Disney World","Times Square","Empire State Building","Chrysler Building","Brooklyn Bridge","Central Park","The Alamo","Space Needle","Gateway Arch","Liberty Bell","Independence Hall","Mount Vernon","Graceland","The Las Vegas Strip","Hoover Dam","Grand Central Terminal","The Hollywood Walk of Fame","Universal Studios","Big Ben","Tower of London","Tower Bridge","Buckingham Palace","Stonehenge","The London Eye","Westminster Abbey","Edinburgh Castle","The Giants Causeway","Hadrian's Wall","The Colosseum","The Leaning Tower of Pisa","The Vatican","St. Peter's Basilica","The Sistine Chapel","The Trevi Fountain","The Pantheon","Venice Canals","The Spanish Steps","Pompeii","The Louvre","Notre-Dame","Arc de Triomphe","Palace of Versailles","Mont Saint-Michel","The Brandenburg Gate","Neuschwanstein Castle","The Berlin Wall","Oktoberfest in Munich","The Rhine River","The Acropolis","The Parthenon","Santorini","The Swiss Alps","The Matterhorn","Sagrada Família","Park Güell","The Running of the Bulls","The Alhambra","Ibiza","The Pyramids of Giza","The Great Sphinx","The Nile River","Valley of the Kings","Petra","The Taj Mahal","The Great Wall of China","The Forbidden City","Mount Everest","Mount Fuji","The Sydney Opera House","The Sydney Harbour Bridge","Uluru","The Great Barrier Reef","Bondi Beach","Machu Picchu","Christ the Redeemer","Iguazu Falls","The Amazon Rainforest","Galápagos Islands","Chichen Itza","Tulum","Cancún","The Panama Canal","Easter Island","Angkor Wat","The Petronas Towers","Marina Bay Sands","Mount Kilimanjaro","Victoria Falls","Table Mountain","Sahara Desert","The Dead Sea","The Western Wall","Mecca","The Burj Khalifa","The Palm Jumeirah","Hagia Sophia","The Blue Mosque","Cappadocia","Red Square","Saint Basil's Cathedral","The Kremlin","The Trans-Siberian Railway","Lake Baikal","Moai statues","The Northern Lights","Antarctica","The North Pole","The South Pole","Hawaii","Waikiki Beach","Pearl Harbor","The Rocky Mountains","Route 66"]},{"id":"countries","name":"Countries","emoji":"🌍","description":"Nations of the world — name that flag, food, or landmark","words":["United States","Canada","Mexico","Brazil","Argentina","Chile","Peru","Colombia","Ecuador","Bolivia","Uruguay","Paraguay","Venezuela","Cuba","Jamaica","Haiti","Dominican Republic","Costa Rica","Panama","Guatemala","Honduras","Nicaragua","El Salvador","Belize","Trinidad and Tobago","United Kingdom","Ireland","France","Germany","Italy","Spain","Portugal","Netherlands","Belgium","Switzerland","Austria","Sweden","Norway","Denmark","Finland","Iceland","Poland","Czech Republic","Hungary","Greece","Turkey","Romania","Croatia","Serbia","Bulgaria","Slovakia","Slovenia","Ukraine","Estonia","Latvia","Lithuania","Luxembourg","Monaco","Vatican City","Malta","Cyprus","Albania","North Macedonia","Bosnia and Herzegovina","Montenegro","Egypt","Morocco","Tunisia","Algeria","South Africa","Kenya","Nigeria","Ethiopia","Ghana","Tanzania","Uganda","Rwanda","Senegal","Ivory Coast","Cameroon","Madagascar","Botswana","Namibia","Zimbabwe","Zambia","Japan","China","South Korea","India","Pakistan","Bangladesh","Thailand","Vietnam","Cambodia","Laos","Malaysia","Singapore","Indonesia","Philippines","Myanmar","Australia","New Zealand","Fiji","Papua New Guinea","Samoa","Saudi Arabia","United Arab Emirates","Israel","Jordan","Lebanon","Qatar","Kuwait","Oman","Bahrain","Nepal","Sri Lanka","Mongolia","Kazakhstan","Uzbekistan","Georgia","Armenia","Azerbaijan","Taiwan","Russia","Bhutan","Maldives","The Bahamas","Barbados"]},{"id":"jobs","name":"Jobs","emoji":"💼","description":"Occupations you can act out or describe","words":["Doctor","Nurse","Surgeon","Dentist","Veterinarian","Pharmacist","Paramedic","Firefighter","Police Officer","Detective","Lawyer","Judge","Teacher","Professor","Librarian","Principal","School Bus Driver","Chef","Baker","Waiter","Bartender","Barista","Farmer","Gardener","Florist","Pilot","Flight Attendant","Air Traffic Controller","Sailor","Ship Captain","Truck Driver","Taxi Driver","Bus Driver","Train Conductor","Mechanic","Electrician","Plumber","Carpenter","Construction Worker","Architect","Engineer","Scientist","Astronaut","Astronomer","Biologist","Chemist","Physicist","Geologist","Meteorologist","Archaeologist","Artist","Painter","Sculptor","Photographer","Graphic Designer","Musician","Singer","Dancer","Actor","Director","Writer","Journalist","News Anchor","Author","Poet","Comedian","Magician","Clown","Circus Performer","Stunt Person","Athlete","Coach","Referee","Lifeguard","Personal Trainer","Hairdresser","Barber","Makeup Artist","Fashion Designer","Model","Tailor","Jeweler","Watchmaker","Shoemaker","Cleaner","Janitor","Housekeeper","Nanny","Babysitter","Social Worker","Therapist","Psychologist","Counselor","Priest","Rabbi","Mail Carrier","Package Delivery Driver","Cashier","Retail Clerk","Real Estate Agent","Accountant","Banker","Stockbroker","Insurance Agent","Secretary","Receptionist","Office Manager","Human Resources","Software Developer","Web Designer","IT Support","Robotics Engineer","Video Game Designer","Animator","Film Editor","Camera Operator","Sound Mixer","Gaffer","Grip","Prop Master","Costume Designer","Set Designer","Makeup Effects Artist","Stunt Coordinator","Producer","Soldier","Marine","Coast Guard","Park Ranger","Zookeeper","Wildlife Biologist","Forest Ranger","Tour Guide","Translator","Interpreter","Diplomat","Mayor","President","Ambassador"]},{"id":"brands","name":"Brands","emoji":"🏷️","description":"Well-known companies, logos, and products","words":["Apple","Microsoft","Google","Amazon","Facebook","Instagram","TikTok","YouTube","Twitter","Netflix","Disney","Pixar","Marvel","Star Wars","Warner Bros.","Universal","Sony","Nintendo","PlayStation","Xbox","Sega","Atari","Lego","Hasbro","Mattel","Barbie","Hot Wheels","Fisher-Price","Nerf","Play-Doh","Crayola","Sharpie","Post-it","Scotch Tape","Kleenex","Band-Aid","Tylenol","Advil","Crest","Colgate","Oral-B","Gillette","Dove","Ivory","Irish Spring","Coca-Cola","Pepsi","Sprite","Fanta","Dr Pepper","Mountain Dew","Gatorade","Powerade","Red Bull","Starbucks","Dunkin'","McDonald's","Burger King","Wendy's","Taco Bell","KFC","Chick-fil-A","Subway","Pizza Hut","Domino's","Papa Johns","Chipotle","Panera Bread","Olive Garden","The Cheesecake Factory","IHOP","Denny's","In-N-Out","Five Guys","Shake Shack","Target","Walmart","Costco","Sam's Club","Ikea","Home Depot","Lowe's","Best Buy","GameStop","Barnes & Noble","Nike","Adidas","Puma","Reebok","Under Armour","New Balance","Converse","Vans","The North Face","Patagonia","Levi's","Gap","Old Navy","Uniqlo","Zara","H&M","Forever 21","American Eagle","Ralph Lauren","Tommy Hilfiger","Gucci","Louis Vuitton","Chanel","Supreme","Tesla","Ford","Chevrolet","Toyota","Honda","BMW","Mercedes-Benz","Volkswagen","Jeep","Ferrari","Lamborghini","Porsche","Harley-Davidson","Boeing","Airbus","FedEx","UPS","USPS","DHL","Uber","Lyft","Airbnb","Spotify","Pandora","iTunes","Zoom","Skype","WhatsApp","Snapchat","Pinterest"]},{"id":"disney-pixar","name":"Disney & Pixar","emoji":"🏰","description":"Characters, movies, and magic from Disney and Pixar","words":["Mickey Mouse","Minnie Mouse","Donald Duck","Daisy Duck","Goofy","Pluto","Chip 'n Dale","Scrooge McDuck","Ludwig Von Drake","Clarabelle Cow","Snow White","The Seven Dwarfs","Dopey","Grumpy","Doc","Cinderella","Prince Charming","Fairy Godmother","Lady Tremaine","Lucifer the cat","Sleeping Beauty","Aurora","Maleficent","Prince Phillip","Flora, Fauna, and Merryweather","The Little Mermaid","Ariel","Prince Eric","Sebastian","Flounder","King Triton","Ursula","Scuttle","Max the dog","Chef Louis","Beauty and the Beast","Belle","The Beast","Lumière","Cogsworth","Mrs. Potts","Chip","Gaston","LeFou","Maurice","Aladdin","Jasmine","Genie","Jafar","Iago","Abu","The Magic Carpet","The Sultan","Rajah","The Cave of Wonders","The Lion King","Simba","Nala","Mufasa","Scar","Timon","Pumbaa","Rafiki","Zazu","Shenzi, Banzai, and Ed","Pocahontas","John Smith","Meeko","Flit","Governor Ratcliffe","Mulan","Mushu","Li Shang","Cri-Kee","Shan Yu","Tarzan","Jane Porter","Clayton","Kala","Terk","Lilo & Stitch","Stitch","Lilo","Nani","Jumba","Pleakley","Gantu","Angel","The Grand Councilwoman","Cobra Bubbles","The Princess and the Frog","Tiana","Prince Naveen","Louis the alligator","Ray the firefly","Dr. Facilier","Mama Odie","Charlotte La Bouff","Tangled","Rapunzel","Flynn Rider","Mother Gothel","Pascal","Maximus","The Snuggly Duckling","Frozen","Elsa","Anna","Olaf","Kristoff","Sven","Hans","Marshmallow","Oaken","Elsa's ice palace","Moana","Maui","Heihei","Pua","Gramma Tala","Chief Tui","Tamatoa","Te Fiti","Moana's boat","Encanto","Mirabel","Isabela","Luisa","Abuela Alma","Bruno","Camilo","Dolores","Pepa","Julieta","Antonio","Casita","Raya and the Last Dragon","Raya","Sisu","Tuk Tuk","Namaari","Wish","Asha","Star","King Magnifico","Valentino","Toy Story","Woody","Buzz Lightyear","Jessie","Rex","Hamm","Mr. Potato Head","Slinky Dog","Bo Peep","Aliens","Bullseye","Lotso","Forky","Duke Caboom","Gabby Gabby","A Bug's Life","Flik","Princess Atta","Hopper","Heimlich","Monsters, Inc.","Sulley","Mike Wazowski","Boo","Randall","Roz","Celia","Waternoose","George Sanderson","The CDA","Finding Nemo","Nemo","Marlin","Dory","Gill","Crush","Squirt","Bruce the shark","Darla","Nigel the pelican","The Incredibles","Mr. Incredible","Elastigirl","Dash","Violet","Jack-Jack","Frozone","Edna Mode","Syndrome","Mirage","Cars","Lightning McQueen","Mater","Sally Carrera","Doc Hudson","Sheriff","Fillmore","Ramone","Flo","Luigi and Guido","Ratatouille","Remy","Linguini","Colette","Skinner","Anton Ego","Django","Emile","Gusteau","The rat colony","WALL-E","EVE","AUTO","MO","Captain McCrea","Up","Carl Fredricksen","Russell","Dug","Kevin the bird","Charles Muntz","Ellie","The Spirit of Adventure","Alpha","Beta and Gamma","Brave","Merida","Queen Elinor","King Fergus","The wisps","Inside Out","Joy","Sadness","Anger","Fear","Disgust","Riley","Bing Bong","Headquarters","The memory orbs","Coco","Miguel","Héctor","Ernesto de la Cruz","Dante","Mama Coco","Abuelita","Imelda","Pepita","The Land of the Dead","Onward","Ian Lightfoot","Barley Lightfoot","Laurel","The Manticore","Soul","Joe Gardner","22","Terry","The Great Before","Luca","Alberto","Giulia","Ercole","Machiavelli the cat","Turning Red","Mei Lee","Ming","Miriam","Abby","Priya","4*Town","Tyler","Jin Lee","Elemental","Ember","Wade","Gale","Clod","Inside Out 2","Anxiety","Envy","Ennui","Embarrassment","The teacup Chip","The Beast's castle","Pride Rock","Hakuna Matata","Under the sea","A whole new world","The floating lanterns","Elsa's ice dress"]},{"id":"star-wars","name":"Star Wars","emoji":"⚔️","description":"Jedi, Sith, droids, ships, and a galaxy far, far away","words":["Luke Skywalker","Princess Leia","Han Solo","Chewbacca","Obi-Wan Kenobi","Darth Vader","Yoda","Emperor Palpatine","R2-D2","C-3PO","Lando Calrissian","Boba Fett","Jabba the Hutt","Greedo","Grand Moff Tarkin","Admiral Ackbar","Mon Mothma","Wedge Antilles","Biggs Darklighter","Uncle Owen","Aunt Beru","Jawas","Tusken Raiders","Stormtrooper","Scout Trooper","Snowtrooper","Death Trooper","Clone Trooper","Anakin Skywalker","Padmé Amidala","Qui-Gon Jinn","Mace Windu","Count Dooku","Darth Maul","General Grievous","Jango Fett","Zam Wesell","Jar Jar Binks","Senator Palpatine","Chancellor Palpatine","Shmi Skywalker","Captain Panaka","Boss Nass","Ki-Adi-Mundi","Plo Koon","Kit Fisto","Aayla Secura","Shaak Ti","Rey","Finn","Poe Dameron","Kylo Ren","BB-8","General Hux","Captain Phasma","Supreme Leader Snoke","Maz Kanata","Rose Tico","Vice Admiral Holdo","DJ","Zorii Bliss","Jannah","D-O","The Mandalorian","Grogu","Din Djarin","Cara Dune","Greef Karga","Moff Gideon","Bo-Katan Kryze","Ahsoka Tano","The Armorer","IG-11","Kuiil","Fennec Shand","Cad Bane","Asajj Ventress","Captain Rex","Commander Cody","The Bad Batch","Crosshair","Hunter","Tech","Wrecker","Omega","Saw Gerrera","Cassian Andor","K-2SO","Jyn Erso","Chirrut Îmwe","Baze Malbus","Orson Krennic","Galen Erso","Bodhi Rook","Lightsaber","The Force","The Dark Side","The Light Side","Jedi","Sith","Padawan","Jedi Master","The Jedi Council","The Sith Lord","Force push","Force lightning","Jedi mind trick","Kyber crystal","Holocron","Blaster","Bowcaster","Thermal detonator","Vibroblade","The Millennium Falcon","X-wing","Y-wing","A-wing","B-wing","TIE Fighter","TIE Interceptor","TIE Bomber","Star Destroyer","Super Star Destroyer","The Death Star","Starkiller Base","The Executor","Slave I","The Ghost","The Razor Crest","Naboo Royal Starship","Jedi Starfighter","Republic Gunship","AT-AT","AT-ST","AT-TE","Speeder bike","Landspeeder","Podracer","Sandcrawler","The Escape Pod","Tantive IV","Home One","Tatooine","Alderaan","Yavin 4","Hoth","Dagobah","Cloud City","Bespin","Endor","The Death Star trench","Coruscant","Naboo","Kamino","Geonosis","Mustafar","Kashyyyk","Utapau","Crait","Jakku","Takodana","Ahch-To","Cantonica","Exegol","Mandalore","Mos Eisley","The Mos Eisley Cantina","The Pit of Carkoon","The Sarlacc","The Rancor","The Wampa","The Dewback","The Bantha","The Tauntaun","The Dianoga","Porgs","The Rathtar","The Krayt Dragon","The Exogorth","The Space Slug","May the Force be with you","I am your father","These aren't the droids","I've got a bad feeling about this","Do or do not","The Rebel Alliance","The Galactic Empire","The First Order","The Resistance","The Republic","The Clone Wars","Order 66","The Battle of Hoth","The Battle of Endor","The Battle of Yavin","A New Hope","The Empire Strikes Back","Return of the Jedi","The Phantom Menace","Attack of the Clones","Revenge of the Sith","The Force Awakens","The Last Jedi","The Rise of Skywalker","Rogue One","Solo","The Book of Boba Fett","Darth Sidious","Grand Admiral Thrawn","Director Orson Krennic","The Battle of Scarif","A moisture farm","Binary sunset","The Kessel Run","Han shot first","The trash compactor","The carbon-freezing chamber","The Emperor's throne room","Ewoks","Wookiees","Gungans"]},{"id":"harry-potter","name":"Harry Potter","emoji":"🪄","description":"Wizards, witches, spells, and the wizarding world","words":["Harry Potter","Hermione Granger","Ron Weasley","Albus Dumbledore","Minerva McGonagall","Severus Snape","Rubeus Hagrid","Sirius Black","Remus Lupin","James Potter","Lily Potter","Petunia Dursley","Vernon Dursley","Dudley Dursley","Mrs. Figg","Ginny Weasley","Fred Weasley","George Weasley","Percy Weasley","Charlie Weasley","Bill Weasley","Molly Weasley","Arthur Weasley","The Burrow","The Weasley clock","Neville Longbottom","Luna Lovegood","Cho Chang","Cedric Diggory","Dean Thomas","Seamus Finnigan","Lavender Brown","Parvati Patil","Padma Patil","Oliver Wood","Katie Bell","Angelina Johnson","Lee Jordan","Colin Creevey","Justin Finch-Fletchley","Draco Malfoy","Lucius Malfoy","Narcissa Malfoy","Vincent Crabbe","Gregory Goyle","Pansy Parkinson","Blaise Zabini","Theodore Nott","Bellatrix Lestrange","Rodolphus Lestrange","Lord Voldemort","Tom Riddle","Peter Pettigrew","Wormtail","Barty Crouch Jr.","Barty Crouch Sr.","Cornelius Fudge","Dolores Umbridge","Rufus Scrimgeour","Kingsley Shacklebolt","Nymphadora Tonks","Mad-Eye Moody","Mundungus Fletcher","Elphias Doge","Aberforth Dumbledore","Ariana Dumbledore","Gellert Grindelwald","Newt Scamander","Tina Goldstein","Queenie Goldstein","Jacob Kowalski","Theseus Scamander","Credence Barebone","Leta Lestrange","Bunty","Fawkes","Hedwig","Crookshanks","Scabbers","Pigwidgeon","Fang","Buckbeak","Norbert","Aragog","The Basilisk","The Hungarian Horntail","The Norwegian Ridgeback","The Chinese Fireball","The Swedish Short-Snout","The Thestral","The Hippogriff","The Unicorn","The Centaur","Firenze","The House-elf","Dobby","Kreacher","Winky","The Phoenix","The Patronus","Harry's stag Patronus","Hermione's otter Patronus","Snape's doe Patronus","The Dementor","The Boggart","The Grindylow","The Merpeople","The Inferi","The Veela","Hogwarts","Hogwarts Express","Platform Nine and Three-Quarters","The Great Hall","The Sorting Hat","Gryffindor","Slytherin","Ravenclaw","Hufflepuff","Godric Gryffindor","Salazar Slytherin","Rowena Ravenclaw","Helga Hufflepuff","The Fat Lady","The Moving Staircases","The Room of Requirement","The Chamber of Secrets","The Restricted Section","The Owlery","The Hospital Wing","The Quidditch Pitch","The Whomping Willow","The Forbidden Forest","Hagrid's Hut","The Prefects' Bathroom","The Mirror of Erised","The Philosopher's Stone","The Triwizard Cup","The Goblet of Fire","The Marauder's Map","The Invisibility Cloak","The Time-Turner","The Pensieve","The Deluminator","The Sword of Gryffindor","A wand","The Elder Wand","The Resurrection Stone","The Deathly Hallows","A Horcrux","Tom Riddle's diary","Marvolo Gaunt's ring","Salazar Slytherin's locket","Helga Hufflepuff's cup","Rowena Ravenclaw's diadem","Nagini","Expelliarmus","Wingardium Leviosa","Alohomora","Lumos","Nox","Accio","Expecto Patronum","Avada Kedavra","Crucio","Imperio","Stupefy","Petrificus Totalus","Obliviate","Riddikulus","Sectumsempra","Legilimens","Occlumency","Apparition","Disapparition","The Floo Network","A Portkey","The Knight Bus","The Leaky Cauldron","Diagon Alley","Knockturn Alley","Gringotts","Ollivanders","Flourish and Blotts","Weasleys' Wizard Wheezes","Honeydukes","Zonko's Joke Shop","The Three Broomsticks","The Hog's Head","Hogsmeade","The Shrieking Shack","Number Twelve Grimmauld Place","The Ministry of Magic","Azkaban","Godric's Hollow","Little Hangleton","Privet Drive","The Cupboard Under the Stairs","The Quidditch World Cup","The Triwizard Tournament","The Yule Ball","A Golden Snitch","A Quaffle","A Bludger","A Beater's bat","A Nimbus 2000","The Firebolt","The Cleansweep","The Hogwarts letters","An owl post","A Howler","Bertie Bott's Every Flavour Beans","Chocolate Frogs","Pumpkin Pasties","Butterbeer","Pumpkin Juice","A cauldron","A potion","Polyjuice Potion","Felix Felicis","Wolfsbane Potion","Veritaserum","Amortentia","The Shrinking Solution","Professor Sprout","Professor Flitwick","Professor Trelawney","Professor Quirrell","Professor Lockhart","Professor Slughorn","Professor Binns","Madam Pomfrey","Madam Hooch","Argus Filch","Mrs. Norris","Peeves","Nearly Headless Nick","The Bloody Baron","The Grey Lady","The Fat Friar","Moaning Myrtle","The Sorting Ceremony","The House Cup","The end-of-term feast","Harry Potter and the Sorcerer's Stone","Foe-Glass","The Two-Way Mirror","The Goblet of Fire ceremony","A Howler from Mrs. Weasley","The Daily Prophet","The Quibbler","Rita Skeeter","Viktor Krum","Fleur Delacour","Madame Maxime","Igor Karkaroff","The Beauxbatons carriage","The Durmstrang ship"]},{"id":"party","name":"Things at a Party","emoji":"🎉","description":"Stuff you see, hear, eat, or do at a party","words":["Balloon","Confetti","Party hat","Streamers","Banner","Piñata","Party favor","Goodie bag","Gift bag","Wrapping paper","Ribbon","Bow","Greeting card","Invitation","RSVP","Birthday cake","Candles","Cupcakes","Ice cream","Ice cream cake","Pizza","Chips and dip","Salsa","Guacamole","Cheese platter","Veggie tray","Fruit platter","Deviled eggs","Meatballs","Sliders","Hot dogs","Hamburgers","Tacos","Nachos","Wings","Punch","Soda","Sparkling water","Lemonade","Iced tea","A toast","A speech","The birthday song","Karaoke","A playlist","A DJ","A dance floor","A conga line","The Macarena","The Chicken Dance","Limbo","Musical chairs","Pin the tail on the donkey","Charades","Heads Up","A photo booth","A selfie","A group photo","A disposable camera","Party lights","A disco ball","String lights","A strobe light","A fog machine","A bounce house","A dunk tank","A face painter","A balloon animal","A magician","A clown","A costume","A dress code","A theme party","A surprise party","A house party","A pool party","A backyard barbecue","A potluck","A dinner party","A cocktail party","A dance party","A costume party","A New Year's Eve party","A holiday party","A wedding reception","A baby shower","A bridal shower","An engagement party","A graduation party","A retirement party","A block party","A tailgate","A picnic","A luau","A piñata stick","A party horn","A sparkler","Fireworks","A champagne toast","A party popper","A guest book","A place card","A centerpiece","A tablecloth","Plastic cups","Paper plates","Napkins","Plastic forks","A cooler","Ice","A punch bowl","A cake stand","Candles on the cake","Making a wish","Blowing out the candles","Opening presents","Thank-you notes","The host","The guest of honor","A plus-one","A party crasher","The designated driver","Coat check","A welcome mat","A doorbell","A porch light","Parking","A playlist on shuffle","Turning the music up","Small talk","An icebreaker","A toastmaster","Dancing poorly on purpose","A slow dance","Cutting the cake","Catching the bouquet","Throwing confetti","A countdown","Midnight","A party foul","Last call","A punch fountain","A surprise shout","A welcome drink","A cake knife"]},{"id":"kitchen","name":"Kitchen Items","emoji":"🍳","description":"Tools, gadgets, and everyday things in the kitchen","words":["Frying pan","Saucepan","Stockpot","Dutch oven","Wok","Baking sheet","Cake pan","Muffin tin","Loaf pan","Pie dish","Casserole dish","Roasting pan","Grill pan","Double boiler","Tea kettle","Coffee pot","French press","Espresso machine","Toaster","Toaster oven","Microwave","Oven","Stove","Range hood","Dishwasher","Refrigerator","Freezer","Ice maker","Garbage disposal","Trash can","Recycling bin","Compost bin","Paper towel holder","Dish rack","Drying mat","Cutting board","Chef's knife","Paring knife","Bread knife","Steak knife","Knife block","Kitchen shears","Vegetable peeler","Box grater","Microplane","Colander","Strainer","Sieve","Salad spinner","Mixing bowl","Measuring cups","Measuring spoons","Liquid measuring cup","Kitchen scale","Timer","Wooden spoon","Spatula","Rubber spatula","Tongs","Whisk","Ladle","Slotted spoon","Pasta fork","Potato masher","Potato ricer","Rolling pin","Pastry brush","Cookie cutter","Piping bag","Ice cream scoop","Can opener","Bottle opener","Corkscrew","Jar opener","Garlic press","Pepper mill","Salt shaker","Oil dispenser","Butter dish","Gravy boat","Stand mixer","Hand mixer","Blender","Food processor","Immersion blender","Slow cooker","Instant Pot","Air fryer","Rice cooker","Electric kettle","Waffle iron","Panini press","George Foreman grill","Hot plate","Oven mitt","Pot holder","Apron","Kitchen towel","Dishcloth","Sponge","Scrub brush","Dish soap","Trash bags","Aluminum foil","Plastic wrap","Parchment paper","Wax paper","Storage containers","Tupperware","Mason jar","Water pitcher","Juice pitcher","Thermos","Lunch box","Plate","Bowl","Cereal bowl","Soup bowl","Salad plate","Dinner plate","Mug","Teacup","Wine glass","Water glass","Tumbler","Champagne flute","Coffee cup","Travel mug","Fork","Spoon","Teaspoon","Tablespoon","Butter knife","Chopsticks","Spork","Serving spoon","Salad tongs","Cake server","Placemat","Napkin ring","Napkin","Coaster","Trivet","Cookbook","Recipe card","Spice rack","Spice jar","Herb garden","Toaster tongs","Egg timer","Meat thermometer","Oven thermometer","Candy thermometer","Basting brush","Turkey baster","Carving fork","Mandoline","Apple corer","Melon baller","Citrus juicer","Zester","Pastry blender","Dough scraper"]},{"id":"80s-90s","name":"80s & 90s","emoji":"📼","description":"Toys, trends, tech, and pop culture from the '80s and '90s","words":["Rubik's Cube","Walkman","Discman","Boom box","Cassette tape","Mix tape","VHS tape","Rewinding a VHS","Blockbuster","Beanie Babies","Tamagotchi","Furby","Tickle Me Elmo","Cabbage Patch Kids","Teddy Ruxpin","Polly Pocket","Barbie Dreamhouse","Easy-Bake Oven","Lite-Brite","Speak & Spell","Pogs","Troll dolls","Koosh ball","Super Soaker","Nerf blaster","Slap bracelet","Scrunchie","Fanny pack","Hypercolor T-shirt","Hammer pants","Mullet","Jellies shoes","Keds","Doc Martens","Flannel shirt","Lisa Frank","Trapper Keeper","Gel pens","Friendship bracelet","Choker necklace","Mood ring","Chia Pet","Magic Eye","Where's Waldo?","The Oregon Trail","MS Paint","Windows 95","AOL Instant Messenger","Dial-up internet","You've got mail","A floppy disk","A CD-ROM","A pager","A pay phone","A busy signal","A cordless phone","A brick phone","A Nokia phone","Snake on a Nokia","A disposable camera","A Polaroid camera","A camcorder","MTV","Nickelodeon","Cartoon Network","Saturday morning cartoons","TGIF","Saved by the Bell","The Fresh Prince of Bel-Air","Full House","Friends","Seinfeld","The X-Files","Power Rangers","Teenage Mutant Ninja Turtles","Care Bears","My Little Pony","He-Man","Thundercats","Transformers","G.I. Joe","The Macarena","The Electric Slide","Grunge","Boy bands","Spice Girls","NSYNC","Backstreet Boys","Britney Spears","Madonna","Michael Jackson's Thriller","Nirvana","Pearl Jam","Game Boy","Nintendo 64","Super Nintendo","Sega Genesis","PlayStation","Pokémon cards","A yo-yo","Skip-It","Moon shoes","Rollerblades","Roller rink","A mix CD","A Discman skip","A tape pencil rewind","A VCR clock blinking 12:00","The Clapper","A lava lamp","A beanbag chair","A waterbed","A landline phone","Call waiting","A Rolodex","A fax machine","A pager message","A yearbook","A school dance","A side ponytail","Frosted tips","A butterfly clip","A puka shell necklace","A wallet chain","JNCO jeans","Overalls with one strap down","A windbreaker","A Walkman auto-reverse","A slap-wrap bracelet","A puka shell choker","A Lisa Frank Trapper Keeper","A clear telephone","A lunchable","Capri Sun","Surge soda","Orbitz drink","A Dunkaroo","A Gushers pouch","A Fruit Roll-Up","A Pudding Pop","A Crystal Pepsi"]},{"id":"board-games","name":"Board & Card Games","emoji":"🎲","description":"Classic and modern games you play around a table","words":["Monopoly","Scrabble","Chess","Checkers","Backgammon","Clue","Sorry!","The Game of Life","Candy Land","Chutes and Ladders","Connect Four","Guess Who?","Battleship","Operation","Mouse Trap","Hungry Hungry Hippos","Don't Break the Ice","Jenga","Twister","Pictionary","Charades","Heads Up","Taboo","Cranium","Catch Phrase","Balderdash","Mad Libs","Apples to Apples","Codenames","Dixit","Wavelength","Just One","The Mind","Telestrations","Wits & Wagers","Speak Out","Hedbanz","5 Second Rule","Uno","Go Fish","Old Maid","War","Solitaire","Hearts","Spades","Bridge","Poker","Texas Hold'em","Blackjack","Rummy","Gin Rummy","Canasta","Crazy Eights","Phase 10","Skip-Bo","Exploding Kittens","The Game of Things","Settlers of Catan","Ticket to Ride","Carcassonne","Pandemic","Forbidden Island","Forbidden Desert","7 Wonders","Azul","Splendor","Dominion","Magic: The Gathering","Pokémon Trading Card Game","Yu-Gi-Oh!","KeyForge","Dungeons & Dragons","Pathfinder","Warhammer","HeroQuest","Gloomhaven","Risk","Diplomacy","Axis & Allies","Stratego","Risk: Legacy","Puerto Rico","Agricola","Werewolf","Mafia","The Resistance","One Night Ultimate Werewolf","Deception: Murder in Hong Kong","Sherlock Holmes Consulting Detective","Mystery Date","Rummikub","Mahjong","Dominoes","Chinese Checkers","Mancala","Yahtzee","Boggle","Bananagrams","Upwords","Scattergories","Trivial Pursuit","Wheel of Fortune","Family Feud","Who Wants to Be a Millionaire?","The Price Is Right","Scene It?","Outburst","Loaded Questions","Pay Day","Mall Madness","Dream Phone","Barbie Queen of the Prom","KerPlunk","Barrel of Monkeys","Hi Ho Cherry-O","Memory","Spot It!","Sleeping Queens","Sushi Go!","Love Letter","The Crew","The Game","Hanabi","Coup","The Resistance: Avalon","Sheriff of Nottingham","King of Tokyo","Smash Up","Munchkin","Fluxx","Uno Flip","Cribbage","Euchre","Pinochle","Whist","Go","Shogi","Xiangqi","Othello","Tic-Tac-Toe","Dots and Boxes","Hangman","MASH","The Floor Is Lava","Musical Chairs","Duck Duck Goose","Red Light, Green Light","Simon Says","Hide and Seek","Tag","Capture the Flag","Kick the Can","Four Square","Hopscotch","Marbles","Jacks","Pick-up Sticks","Tiddlywinks","Monopoly Deal","Chess clock","Labyrinth","The Enchanted Forest","Trouble","Aggravation","Parcheesi","Sequence","Mastermind","Quoridor","Blokus","Qwirkle","Tsuro","King of New York","Sagrada","Wingspan","Cascadia","Calico","Everdell","Lost Cities","The Quest for El Dorado","Uno Attack","Sequence Dice"]},{"id":"mythical","name":"Mythical Creatures","emoji":"🐉","description":"Beasts, beings, and legends from myth and folklore","words":["Dragon","Unicorn","Pegasus","Phoenix","Griffin","Hippogriff","Basilisk","Hydra","Kraken","Leviathan","Sea serpent","Mermaid","Merman","Siren","Selkie","Nymph","Dryad","Naiad","Satyr","Faun","Centaur","Minotaur","Cyclops","Medusa","Gorgon","Harpy","Sphinx","Chimera","Cerberus","Thunderbird","Roc","Firebird","Wyvern","Wyrm","Drake","Lindworm","Kirin","Qilin","Foo dog","Nian","Jiangshi","Kitsune","Tanuki","Oni","Tengu","Kappa","Yokai","Godzilla","Mothra","King Kong","Loch Ness Monster","Bigfoot","Yeti","Chupacabra","Jackalope","Wendigo","Skinwalker","Mothman","Jersey Devil","Banshee","Leprechaun","Fairy","Pixie","Sprite","Elf","Dwarf","Gnome","Troll","Ogre","Goblin","Hobgoblin","Orc","Kobold","Imp","Demon","Devil","Angel","Archangel","Cherub","Valkyrie","Einherjar","Fenrir","Jörmungandr","Sleipnir","Huginn and Muninn","Yggdrasil","Giant","Titan","Talos","Argus","The Nemean Lion","Scylla","Charybdis","Werewolf","Vampire","Zombie","Mummy","Ghost","Poltergeist","Wraith","Specter","Shade","Revenant","Lich","Skeleton warrior","Ghoul","Wight","Witch","Warlock","Wizard","Sorcerer","Mage","Enchantress","Necromancer","Alchemist","Seer","Oracle","Genie","Djinn","Ifrit","Golem","Homunculus","Gargoyle","Dullahan","Headless Horseman","Kelpie","Boggart","Brownie","House elf","Tooth fairy","Sandman","Jack Frost","Father Christmas","Cupid","Puck","Oberon","Titania","The Green Man","Herne the Hunter","Anubis","Ra","Quetzalcoatl","Feathered serpent","Camazotz","Rainbow serpent","Bunyip","Taniwha","Menehune","Tiki","Sea dragon","Ice dragon","Toothless","Smaug","Falkor","Easter Bunny","Krampus","Gremlin","Mogwai","Stripe the gremlin","A talking tree","Ent","Tom Bombadil","Balrog","Shelob","Beorn the skin-changer","A were-bear","Beorn","A selkie bride","A kelpie horse"]},{"id":"holidays","name":"Holidays & Christmas","emoji":"🎄","description":"Holidays, traditions, and festive things year-round","words":["Christmas tree","Christmas lights","Ornament","Tinsel","Garland","A star on the tree","An angel on the tree","A tree stand","A tree skirt","A wreath","Mistletoe","Holly","Poinsettia","Candy cane","Gingerbread man","Gingerbread house","Sugar cookies","Eggnog","Hot chocolate","Peppermint mocha","Fruitcake","Christmas ham","Roast turkey","Stuffing","Cranberry sauce","Santa Claus","Mrs. Claus","The elves","Rudolph","Dasher","Dancer","Prancer","Vixen","Comet","Cupid","Donner","Blitzen","The North Pole","Santa's workshop","Santa's sleigh","A stocking","A stocking stuffer","A present","Wrapping paper","A gift tag","A bow","A ribbon","A gift bag","An advent calendar","A nutcracker","A snowman","A snowball fight","Making snow angels","Ice skating","Sledding","A sleigh ride","A fireplace","A Yule log","Chestnuts roasting","Caroling","Jingle Bells","Silent Night","White Christmas","All I Want for Christmas Is You","The Twelve Days of Christmas","The Nutcracker ballet","A Christmas Carol","Ebenezer Scrooge","Tiny Tim","The Ghost of Christmas Past","The Ghost of Christmas Present","The Ghost of Christmas Yet to Come","Elf on the Shelf","A nativity scene","The three wise men","A manger","A star of Bethlehem","Hanukkah","A menorah","A dreidel","Latkes","Sufganiyot","Chocolate coins","The Festival of Lights","Kwanzaa","A kinara","New Year's Eve","A countdown","A ball drop","Times Square","A New Year's resolution","Auld Lang Syne","Confetti","A noisemaker","Fireworks","Valentine's Day","A heart-shaped box of chocolates","A love letter","A rose","Cupid's arrow","A valentine card","A secret admirer","St. Patrick's Day","A shamrock","A leprechaun","A pot of gold","A rainbow","Green clothes","Easter","The Easter Bunny","An Easter egg","An egg hunt","An Easter basket","Chocolate bunnies","Jelly beans","Hot cross buns","Easter bonnet","Fourth of July","A flag","A parade","A picnic","A barbecue","Sparklers","A patriotic cake","Halloween","A jack-o'-lantern","A costume","Trick-or-treating","A candy bucket","A haunted house","A ghost decoration","A skeleton","A witch's hat","A broomstick","A black cat","A cobweb","A cauldron","Candy corn","Caramel apples","Thanksgiving","A turkey","Mashed potatoes","Gravy","Pumpkin pie","Pecan pie","Cornbread","A cornucopia","A harvest table","Breaking the wishbone","Saying grace","A football game","Black Friday","Mother's Day","Father's Day","A homemade card","Breakfast in bed","A bouquet of flowers","Grandparents' Day","Earth Day","Arbor Day","Labor Day","Memorial Day","Veterans Day","Presidents' Day","Martin Luther King Jr. Day","Juneteenth","Indigenous Peoples' Day","Cinco de Mayo","Mardi Gras","A parade float","A mask","Beads","A king cake","Pancake Day","Groundhog Day","April Fools' Day","A prank"]},{"id":"film-set","name":"Film Set & Props","emoji":"🎥","description":"Cameras, grip gear, props, and the stuff that makes a movie","words":["Gaffer tape","Slate","Boom mic","Dolly","Green screen","Blue screen","Prop gun","Squib","Fog machine","C-stand","Sandbag","Apple box","Bounce board","Reflector","Barn doors","Softbox","Fresnel light","LED panel","China lantern","Practical light","Follow spot","Steadicam","Gimbal","Slider","Jib","Crane","Technocrane","Tripod","Fluid head","High hat","Lav mic","Shotgun mic","Wireless pack","Sound blanket","Mixer","Playback speaker","Video village","Director's monitor","Director's chair","Call sheet","Sides","Script","Shot list","Storyboard","Walkie-talkie","Headset","Bullhorn","Cue light","Eyeline stick","Follow focus","Matte box","ND filter","Polarizer","Anamorphic lens","Prime lens","Zoom lens","Macro lens","Lens cloth","Memory card","Hard drive","DIT cart","Spike tape","Glow tape","Camera tape","Stinger","Distro box","Generator","Grip truck","Condor lift","Scissor lift","Ladder","Menace arm","Flag","Silk","Scrim","Beadboard","Foam core","Furniture blanket","Moving blanket","Fake blood","Blood pack","Squib vest","Prosthetic","Wig","Bald cap","Spirit gum","Makeup kit","Airbrush","Period costume","Stunt pad","Crash mat","Harness","Wire rig","Rain tower","Wind machine","Hazer","Dry ice","Confetti cannon","Breakaway glass","Breakaway furniture","Rubber knife","Hero prop","Stunt prop","Props table","Set dressing","Backdrop","Cyc wall","Costume rack","Wardrobe bag","Makeup trailer","Honeywagon","Picture car","Process trailer","Camera car","Russian arm","Drone","Motion-capture suit","Timecode slate","Closed set sign","Stand-in","Photo double","Background actor","First aid kit","Fire extinguisher","Pop-up tent","Daylight balloon","Gaffer's gloves","Multi-tool","Sharpie","Hero phone","Prop food","Fake money","Briefcase of cash","Badge","Handcuffs","Holster","Prop sword","Shield","Crown","Scepter","Treasure chest","Typewriter","Rotary phone","Playback monitor","Craft services","Call time","Wrap","Shoulder rig","Script supervisor's book","Continuity polaroid","Lunch tent","French flag","Pancake apple box","Foley stage","ADR booth"]},{"id":"scifi-gadgets","name":"Sci-Fi Gadgets","emoji":"🚀","description":"Inventions from space operas, time travel, and the future","words":["Lightsaber","Phaser","Tricorder","Communicator","Flux capacitor","Hoverboard","Proton pack","Portal gun","Sonic screwdriver","TARDIS","Warp core","Teleporter","Replicator","Holodeck","Tractor beam","Cloaking device","Force field","Time machine","The DeLorean","Neuralyzer","The Noisy Cricket","Jetpack","Laser cannon","Shrink ray","Invisibility cloak","Universal translator","Mind-control helmet","Gravity boots","Magnetic boots","Space helmet","EVA suit","Cryo chamber","Hypersleep pod","Escape pod","Shuttlecraft","Transporter pad","Holoprojector","Hologram table","Datapad","Comlink","Blaster","Bowcaster","Thermal detonator","Ion cannon","Deflector shield","Hyperdrive","Lightspeed drive","Kyber crystal","Holocron","Astromech droid","Protocol droid","Carbonite slab","Bacta tank","Cloning tank","Life-support suit","Breathing apparatus","Proton torpedo","Seismic charge","Stargate","Wormhole generator","Terraforming machine","Weather-control device","Doomsday device","Death ray","Moon laser","Shark with a laser","Power armor","Exosuit","Mecha","Cybernetic arm","Neural implant","Nanobots","Matter compiler","Babel fish","Improbability drive","Food replicator","Hypospray","Medical tricorder","Bone knitter","Regenerator","Phaser rifle","Bat'leth","Motion tracker","Pulse rifle","Smart gun","Power loader","Light cycle","Identity disc","Long-fall boots","Companion cube","Gravity gun","HEV suit","Energy sword","Needler","Arc reactor","Repulsor","Unibeam","Iron Man gauntlet","Iron Man suit","Web shooters","Web fluid","Batarang","Bat-Signal","Utility belt","Vibranium shield","Mjolnir","Stormbreaker","Infinity Gauntlet","The Tesseract","Pym particles","Ant-Man suit","Quantum tunnel","Flying car","Hover car","Android","Cyborg","Replicant","Voight-Kampff machine","Spinner car","Origami unicorn","HAL 9000","Mother computer","Skynet","T-800 endoskeleton","Plasma rifle","Airlock","Oxygen tank","Space elevator","Dyson sphere","Ringworld","Teleport booth","Communicator badge","Captains chair","Viewscreen","Dilithium crystals","Warp nacelle","Photon torpedo","Captain's chair","Master Chief's armor","Ansible","Still-suit","Ornithopter","Hunter-seeker","Cerebro","Adamantium claws","Sentinel robot","Borg implant","Geordi's visor","Mother Box","Boom Tube","Cosmic Cube","Ultimate Nullifier","Silver Surfer's board","Kryptonite","Phantom Zone projector","Lasso of Truth","Invisible jet","Tribble","Borg cube","Voight-Kampff kit"]}]};
+
+  (function () {
+    "use strict";
+
+    const STORAGE = {
+      settings: "headsup.v1.settings",
+      custom: "headsup.v1.custom",
+      patches: "headsup.v1.patches"
+    };
+    const PALETTE = ["#ff3d7f", "#ffd166", "#3dffb3", "#5ce1ff", "#8b7cff", "#ff8a3d", "#ff6ad5", "#7cff6b"];
+    const DURATIONS = [30, 60, 90, 120];
+    const TILT_NEUTRAL = 0.32;
+    const TILT_TRIGGER = 0.52;
+    const TILT_COOLDOWN = 700;
+
+    const $ = (id) => document.getElementById(id);
+    const screens = {
+      home: $("screen-home"),
+      settings: $("screen-settings"),
+      editor: $("screen-editor"),
+      play: $("screen-play"),
+      end: $("screen-end")
+    };
+
+    let settings = loadSettings();
+    let customCats = loadJSON(STORAGE.custom, []);
+    let patches = loadJSON(STORAGE.patches, {});
+    let filter = "";
+    let editingId = null;
+
+    let activeCategory = null;
+    let deck = [];
+    let deckIndex = 0;
+    let results = [];
+    let playing = false;
+    let countingDown = false;
+    let accepting = false;
+    let endAt = 0;
+    let raf = 0;
+    let audioCtx = null;
+    let wakeLock = null;
+    let tiltArmed = false;
+    let tiltState = "neutral";
+    let lastTiltAt = 0;
+    let tiltListenOn = false;
+    let lastCategory = null;
+
+    function loadSettings() {
+      const d = { duration: 60, sound: true, tilt: true };
+      try {
+        const raw = JSON.parse(localStorage.getItem(STORAGE.settings) || "null");
+        if (!raw) return d;
+        if (DURATIONS.includes(Number(raw.duration))) d.duration = Number(raw.duration);
+        if (typeof raw.sound === "boolean") d.sound = raw.sound;
+        if (typeof raw.tilt === "boolean") d.tilt = raw.tilt;
+      } catch (e) {}
+      return d;
+    }
+    function saveSettings() {
+      try { localStorage.setItem(STORAGE.settings, JSON.stringify(settings)); } catch (e) {}
+    }
+    function loadJSON(key, fallback) {
+      try {
+        const v = JSON.parse(localStorage.getItem(key) || "null");
+        return v == null ? fallback : v;
+      } catch (e) { return fallback; }
+    }
+    function saveJSON(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {
+        toast("Couldn't save to this browser.");
+      }
+    }
+
+    function uniqueWords(list) {
+      const out = [];
+      const seen = new Set();
+      for (const raw of list) {
+        const w = String(raw || "").replace(/\s+/g, " ").trim();
+        if (!w) continue;
+        const k = w.toLowerCase();
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(w);
+      }
+      return out;
+    }
+
+    function allCategories() {
+      const builtin = (BUILTIN_DB.categories || []).map((c, i) => {
+        const p = patches[c.id] || {};
+        return {
+          id: c.id,
+          name: p.name || c.name,
+          emoji: p.emoji || c.emoji,
+          description: p.description || c.description,
+          words: uniqueWords([].concat(c.words || [], p.words || [])),
+          builtin: true,
+          color: PALETTE[i % PALETTE.length]
+        };
+      });
+      const customs = customCats.map((c, i) => ({
+        id: c.id,
+        name: c.name,
+        emoji: c.emoji || "✏️",
+        description: c.description || "A custom category",
+        words: uniqueWords(c.words || []),
+        builtin: false,
+        custom: true,
+        color: PALETTE[(i + 3) % PALETTE.length]
+      }));
+      return builtin.concat(customs);
+    }
+
+    function mixCategory() {
+      const seen = new Set();
+      const words = [];
+      for (const c of allCategories()) {
+        for (const w of c.words) {
+          const k = w.toLowerCase();
+          if (seen.has(k)) continue;
+          seen.add(k);
+          words.push(w);
+        }
+      }
+      return {
+        id: "__mix__",
+        name: "Mix of Everything",
+        emoji: "🌈",
+        description: "A shuffled deck of every category",
+        words: words,
+        color: "#ffd166"
+      };
+    }
+
+    function findCategory(id) {
+      if (id === "__mix__") return mixCategory();
+      return allCategories().find((c) => c.id === id) || null;
+    }
+
+    /* ---------- render home ---------- */
+    function renderHome() {
+      const grid = $("grid");
+      const q = filter.trim().toLowerCase();
+      const cats = allCategories().filter((c) => {
+        if (!q) return true;
+        return (c.name + " " + (c.description || "") + " " + c.id).toLowerCase().includes(q);
+      });
+      grid.innerHTML = "";
+      if (!cats.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No categories match that search.";
+        grid.appendChild(empty);
+        return;
+      }
+      for (const c of cats) {
+        const btn = document.createElement("button");
+        btn.className = "card";
+        btn.type = "button";
+        btn.style.setProperty("--accent", c.color);
+        btn.setAttribute("data-id", c.id);
+        const emoji = document.createElement("div");
+        emoji.className = "emoji";
+        emoji.textContent = c.emoji || "🎮";
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = c.name;
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = c.words.length + " words";
+        btn.appendChild(emoji);
+        btn.appendChild(name);
+        btn.appendChild(meta);
+        if (c.custom) {
+          const badge = document.createElement("div");
+          badge.className = "badge";
+          badge.textContent = "CUSTOM";
+          btn.appendChild(badge);
+          const actions = document.createElement("div");
+          actions.className = "card-actions";
+          const ed = document.createElement("button");
+          ed.type = "button"; ed.title = "Edit"; ed.textContent = "✏️";
+          ed.addEventListener("click", (e) => { e.stopPropagation(); openEditor(c.id); });
+          const del = document.createElement("button");
+          del.type = "button"; del.title = "Delete"; del.textContent = "🗑️";
+          del.addEventListener("click", (e) => { e.stopPropagation(); deleteCustom(c.id); });
+          actions.appendChild(ed);
+          actions.appendChild(del);
+          btn.appendChild(actions);
+        }
+        btn.addEventListener("click", () => startRound(c));
+        grid.appendChild(btn);
+      }
+    }
+
+    /* ---------- settings / editor UI ---------- */
+    function syncSettingsUI() {
+      document.querySelectorAll("#duration-seg button").forEach((b) => {
+        b.setAttribute("aria-pressed", String(Number(b.dataset.dur) === settings.duration));
+      });
+      $("tog-sound").setAttribute("aria-pressed", String(settings.sound));
+      $("tog-tilt").setAttribute("aria-pressed", String(settings.tilt));
+    }
+
+    function openSettings() {
+      syncSettingsUI();
+      screens.settings.classList.remove("hidden");
+    }
+    function closeSettings() { screens.settings.classList.add("hidden"); }
+
+    function openEditor(id) {
+      editingId = id || null;
+      const cat = id ? customCats.find((c) => c.id === id) : null;
+      $("editor-title").textContent = cat ? "Edit category" : "Create category";
+      $("ed-name").value = cat ? cat.name : "";
+      $("ed-emoji").value = cat ? (cat.emoji || "") : "";
+      $("ed-desc").value = cat ? (cat.description || "") : "";
+      $("ed-words").value = cat ? (cat.words || []).join("\n") : "";
+      $("btn-editor-delete").classList.toggle("hidden", !cat);
+      screens.editor.classList.remove("hidden");
+      setTimeout(() => $("ed-name").focus(), 50);
+    }
+    function closeEditor() {
+      screens.editor.classList.add("hidden");
+      editingId = null;
+    }
+    function saveEditor() {
+      const name = $("ed-name").value.replace(/\s+/g, " ").trim();
+      const emoji = $("ed-emoji").value.trim();
+      const description = $("ed-desc").value.replace(/\s+/g, " ").trim();
+      const words = uniqueWords($("ed-words").value.split(/\r?\n/));
+      if (!name) { toast("Give your category a name."); return; }
+      if (!words.length) { toast("Add at least one word, one per line."); return; }
+      if (editingId) {
+        const i = customCats.findIndex((c) => c.id === editingId);
+        if (i >= 0) customCats[i] = { ...customCats[i], name, emoji, description, words };
+      } else {
+        customCats.push({
+          id: "custom-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6),
+          name, emoji, description, words
+        });
+      }
+      saveJSON(STORAGE.custom, customCats);
+      closeEditor();
+      renderHome();
+      toast(words.length < 10 ? "Saved. A few more words will make a better round." : "Category saved.");
+    }
+    function deleteCustom(id) {
+      const cat = customCats.find((c) => c.id === id);
+      if (!cat) return;
+      if (!confirm('Delete "' + cat.name + '"? This cannot be undone.')) return;
+      customCats = customCats.filter((c) => c.id !== id);
+      saveJSON(STORAGE.custom, customCats);
+      closeEditor();
+      renderHome();
+      toast("Category deleted.");
+    }
+
+    /* ---------- export / import ---------- */
+    function exportAll() {
+      const payload = {
+        categories: allCategories().map((c) => ({
+          id: c.id,
+          name: c.name,
+          emoji: c.emoji,
+          description: c.description,
+          words: c.words
+        }))
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "categories.json";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+
+    function importJSONFile(file) {
+      const reader = new FileReader();
+      reader.onerror = () => toast("Couldn't read that file.");
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(String(reader.result || ""));
+          const list = Array.isArray(data) ? data : data.categories;
+          if (!Array.isArray(list)) throw new Error("shape");
+          let added = 0, updated = 0, wordsIn = 0;
+          const builtinIds = new Set((BUILTIN_DB.categories || []).map((c) => c.id));
+          for (const raw of list) {
+            if (!raw || typeof raw !== "object") continue;
+            const name = String(raw.name || "").trim();
+            const words = uniqueWords(raw.words || []);
+            if (!name && !words.length) continue;
+            const id = String(raw.id || slugify(name) || ("import-" + Date.now()));
+            wordsIn += words.length;
+            if (builtinIds.has(id)) {
+              const extra = words;
+              const prev = patches[id] || {};
+              patches[id] = {
+                name: raw.name || prev.name,
+                emoji: raw.emoji || prev.emoji,
+                description: raw.description || prev.description,
+                words: uniqueWords([].concat(prev.words || [], extra))
+              };
+              updated++;
+            } else {
+              const existing = customCats.find((c) => c.id === id || c.name.toLowerCase() === name.toLowerCase());
+              if (existing) {
+                existing.name = name || existing.name;
+                if (raw.emoji) existing.emoji = raw.emoji;
+                if (raw.description) existing.description = raw.description;
+                existing.words = uniqueWords([].concat(existing.words || [], words));
+                updated++;
+              } else {
+                customCats.push({
+                  id: id.indexOf(" ") >= 0 ? "custom-" + Date.now().toString(36) : id,
+                  name: name || "Imported",
+                  emoji: raw.emoji || "✏️",
+                  description: raw.description || "",
+                  words
+                });
+                added++;
+              }
+            }
+          }
+          saveJSON(STORAGE.custom, customCats);
+          saveJSON(STORAGE.patches, patches);
+          renderHome();
+          toast("Imported " + (added + updated) + " categories (" + added + " new, " + updated + " updated).");
+        } catch (e) {
+          toast("That file doesn't look like a categories JSON.");
+        }
+      };
+      reader.readAsText(file);
+    }
+    function slugify(s) {
+      return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+    }
+
+    /* ---------- audio ---------- */
+    function ctx() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+    function unlockAudio() { ctx(); }
+    function beep(freq, dur, type, gainVal, when) {
+      if (!settings.sound) return;
+      const ac = ctx();
+      if (!ac) return;
+      const t0 = ac.currentTime + (when || 0);
+      const osc = ac.createOscillator();
+      const g = ac.createGain();
+      osc.type = type || "sine";
+      osc.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gainVal || 0.12, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(ac.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    }
+    function sfx(kind) {
+      if (kind === "count") beep(523, 0.09, "sine", 0.1);
+      else if (kind === "go") beep(784, 0.18, "triangle", 0.14);
+      else if (kind === "correct") { beep(880, 0.09, "sine", 0.13); beep(1174, 0.14, "sine", 0.11, 0.08); }
+      else if (kind === "pass") beep(311, 0.14, "triangle", 0.08);
+      else if (kind === "end") { beep(392, 0.14, "sine", 0.1); beep(311, 0.16, "sine", 0.1, 0.14); beep(247, 0.28, "sine", 0.1, 0.3); }
+      else if (kind === "tick") beep(980, 0.05, "square", 0.05);
+    }
+
+    /* ---------- wake lock ---------- */
+    async function requestWakeLock() {
+      try {
+        if (navigator.wakeLock) {
+          wakeLock = await navigator.wakeLock.request("screen");
+          wakeLock.addEventListener("release", () => {});
+        }
+      } catch (e) {}
+    }
+    async function releaseWakeLock() {
+      try { if (wakeLock) await wakeLock.release(); } catch (e) {}
+      wakeLock = null;
+    }
+
+    /* ---------- tilt ---------- */
+    function screenUpComponent(e) {
+      if (e.beta == null || e.gamma == null) return null;
+      const beta = e.beta * Math.PI / 180;
+      const gamma = e.gamma * Math.PI / 180;
+      return Math.cos(beta) * Math.cos(gamma);
+    }
+    function onOrientation(e) {
+      if (!playing || !accepting || !settings.tilt) return;
+      const v = screenUpComponent(e);
+      if (v == null) return;
+      handleTiltValue(v);
+    }
+    function onMotion(e) {
+      if (!playing || !accepting || !settings.tilt) return;
+      const g = e.accelerationIncludingGravity;
+      if (!g || g.z == null) return;
+      // z is typically -9.8 screen-up, +9.8 screen-down. Normalize to same sign as orientation helper.
+      handleTiltValue(-g.z / 9.8);
+    }
+    function handleTiltValue(v) {
+      const now = Date.now();
+      if (Math.abs(v) < TILT_NEUTRAL) {
+        tiltState = "neutral";
+        tiltArmed = true;
+        return;
+      }
+      if (!tiltArmed || tiltState !== "neutral") return;
+      if (now - lastTiltAt < TILT_COOLDOWN) return;
+      if (v > TILT_TRIGGER) {
+        tiltState = "up";
+        tiltArmed = false;
+        lastTiltAt = now;
+        mark("pass");
+      } else if (v < -TILT_TRIGGER) {
+        tiltState = "down";
+        tiltArmed = false;
+        lastTiltAt = now;
+        mark("correct");
+      }
+    }
+    async function requestTiltPermission(opts) {
+      const quiet = !!(opts && opts.quiet);
+      if (!window.isSecureContext) {
+        listenTilt(true);
+        if (!quiet) toast("Tilt needs HTTPS. Taps and keys still work.");
+        return false;
+      }
+      let ok = true;
+      try {
+        if (typeof DeviceOrientationEvent !== "undefined" &&
+            typeof DeviceOrientationEvent.requestPermission === "function") {
+          const r = await DeviceOrientationEvent.requestPermission();
+          ok = r === "granted";
+        }
+        if (typeof DeviceMotionEvent !== "undefined" &&
+            typeof DeviceMotionEvent.requestPermission === "function") {
+          try { await DeviceMotionEvent.requestPermission(); } catch (e) {}
+        }
+      } catch (e) { ok = false; }
+      listenTilt(true);
+      if (!quiet) {
+        if (ok) toast("Tilt is on. Down = got it, up = pass.");
+        else toast("Tilt permission wasn't granted. Taps and keys still work.");
+      }
+      return ok;
+    }
+    function listenTilt(on) {
+      if (on && !tiltListenOn) {
+        window.addEventListener("deviceorientation", onOrientation, true);
+        window.addEventListener("devicemotion", onMotion, true);
+        tiltListenOn = true;
+      } else if (!on && tiltListenOn) {
+        window.removeEventListener("deviceorientation", onOrientation, true);
+        window.removeEventListener("devicemotion", onMotion, true);
+        tiltListenOn = false;
+      }
+    }
+
+    /* ---------- game flow ---------- */
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+    function refillDeck(avoid) {
+      let words = shuffle(activeCategory.words);
+      if (avoid && words.length > 1 && words[0] === avoid) {
+        const x = words[0]; words[0] = words[1]; words[1] = x;
+      }
+      deck = words;
+      deckIndex = 0;
+    }
+    function currentWord() { return deck[deckIndex] || ""; }
+    function advanceWord() {
+      deckIndex++;
+      if (deckIndex >= deck.length) refillDeck(results.length ? results[results.length - 1].word : null);
+      showWord(currentWord());
+    }
+    function showWord(text) {
+      const el = $("word");
+      el.textContent = text;
+      const n = text.length;
+      if (n <= 14) el.style.fontSize = "clamp(3.2rem, 14vw, 8rem)";
+      else if (n <= 28) el.style.fontSize = "clamp(2.4rem, 10vw, 5.5rem)";
+      else if (n <= 48) el.style.fontSize = "clamp(1.7rem, 7vw, 3.5rem)";
+      else el.style.fontSize = "clamp(1.35rem, 5.4vw, 2.5rem)";
+      el.style.animation = "none";
+      void el.offsetWidth;
+      el.style.animation = "";
+    }
+    function formatTime(ms) {
+      const s = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return m + ":" + String(r).padStart(2, "0");
+    }
+
+    async function startRound(cat) {
+      if (!cat || !cat.words || !cat.words.length) {
+        toast("That category has no words yet.");
+        return;
+      }
+      unlockAudio();
+      lastCategory = cat;
+      activeCategory = cat;
+      results = [];
+      refillDeck(null);
+      playing = false;
+      countingDown = true;
+      accepting = false;
+      tiltState = "neutral";
+      tiltArmed = false;
+      closeSettings();
+      closeEditor();
+      screens.end.classList.add("hidden");
+      screens.home.classList.add("hidden");
+      screens.play.classList.remove("hidden");
+      $("play-cat").textContent = (cat.emoji ? cat.emoji + " " : "") + cat.name;
+      $("play-timer").textContent = formatTime(settings.duration * 1000);
+      $("play-timer").className = "timer";
+      $("word").textContent = "";
+      $("flash-layer").className = "";
+      $("flash-layer").textContent = "";
+      const layer = $("countdown-layer");
+      const num = $("count-num");
+      layer.classList.remove("hidden");
+      if (settings.tilt) {
+        try { await requestTiltPermission({ quiet: true }); } catch (e) {}
+      }
+      requestWakeLock();
+      const steps = ["3", "2", "1", "GO!"];
+      for (let i = 0; i < steps.length; i++) {
+        num.textContent = steps[i];
+        num.style.animation = "none";
+        void num.offsetWidth;
+        num.style.animation = "";
+        sfx(i < 3 ? "count" : "go");
+        await wait(i < 3 ? 700 : 550);
+        if (!countingDown) return;
+      }
+      layer.classList.add("hidden");
+      countingDown = false;
+      playing = true;
+      accepting = true;
+      tiltArmed = false;
+      tiltState = "neutral";
+      endAt = Date.now() + settings.duration * 1000;
+      showWord(currentWord());
+      loopTimer();
+    }
+
+    function loopTimer() {
+      cancelAnimationFrame(raf);
+      const tick = () => {
+        if (!playing) return;
+        const left = endAt - Date.now();
+        const el = $("play-timer");
+        el.textContent = formatTime(left);
+        el.className = "timer" + (left <= 10000 && left > 5000 ? " warn" : left <= 5000 ? " danger" : "");
+        if (left <= 0) { finishRound(); return; }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }
+
+    function mark(kind) {
+      if (!playing || !accepting) return;
+      const word = currentWord();
+      if (!word) return;
+      accepting = false;
+      results.push({ word: word, correct: kind === "correct" });
+      sfx(kind);
+      flash(kind === "correct");
+      setTimeout(() => {
+        if (!playing) return;
+        advanceWord();
+        accepting = true;
+        tiltArmed = false;
+        tiltState = "neutral";
+      }, 280);
+    }
+
+    function flash(correct) {
+      const el = $("flash-layer");
+      el.textContent = correct ? "GOT IT" : "PASS";
+      el.className = "show " + (correct ? "correct" : "pass");
+      setTimeout(() => { el.className = ""; el.textContent = ""; }, 260);
+    }
+
+    function finishRound() {
+      if (!playing && !countingDown) return;
+      playing = false;
+      countingDown = false;
+      accepting = false;
+      cancelAnimationFrame(raf);
+      sfx("end");
+      releaseWakeLock();
+      const correct = results.filter((r) => r.correct).length;
+      const passed = results.length - correct;
+      $("end-score").textContent = String(correct);
+      $("end-sub").textContent = correct === 1 ? "1 got it  ·  " + passed + " passed" : correct + " got it  ·  " + passed + " passed";
+      if (!results.length) $("end-sub").textContent = "Time's up — no words this round.";
+      const list = $("end-list");
+      list.innerHTML = "";
+      for (const r of results) {
+        const li = document.createElement("li");
+        li.className = r.correct ? "ok" : "no";
+        const i = document.createElement("i");
+        i.textContent = r.correct ? "✓" : "–";
+        li.appendChild(i);
+        li.appendChild(document.createTextNode(r.word));
+        list.appendChild(li);
+      }
+      screens.play.classList.add("hidden");
+      screens.end.classList.remove("hidden");
+    }
+
+    function goHome() {
+      playing = false;
+      countingDown = false;
+      accepting = false;
+      cancelAnimationFrame(raf);
+      releaseWakeLock();
+      screens.play.classList.add("hidden");
+      screens.end.classList.add("hidden");
+      screens.home.classList.remove("hidden");
+      $("countdown-layer").classList.add("hidden");
+    }
+
+    function wait(ms) { return new Promise((res) => setTimeout(res, ms)); }
+
+    /* ---------- toast / orientation ---------- */
+    let toastTimer = 0;
+    function toast(msg) {
+      const el = $("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+    }
+    function updateOrientation() {
+      const landscape = window.innerWidth > window.innerHeight;
+      document.body.classList.toggle("landscape", landscape);
+    }
+
+    /* ---------- events ---------- */
+    $("search").addEventListener("input", (e) => { filter = e.target.value; renderHome(); });
+    $("btn-settings").addEventListener("click", openSettings);
+    $("btn-settings-close").addEventListener("click", closeSettings);
+    screens.settings.addEventListener("click", (e) => { if (e.target === screens.settings) closeSettings(); });
+    $("btn-create").addEventListener("click", () => openEditor(null));
+    $("btn-editor-cancel").addEventListener("click", closeEditor);
+    $("btn-editor-save").addEventListener("click", saveEditor);
+    $("btn-editor-delete").addEventListener("click", () => { if (editingId) deleteCustom(editingId); });
+    screens.editor.addEventListener("click", (e) => { if (e.target === screens.editor) closeEditor(); });
+
+    document.querySelectorAll("#duration-seg button").forEach((b) => {
+      b.addEventListener("click", () => {
+        settings.duration = Number(b.dataset.dur);
+        saveSettings();
+        syncSettingsUI();
+      });
+    });
+    $("tog-sound").addEventListener("click", () => {
+      settings.sound = !settings.sound;
+      saveSettings();
+      syncSettingsUI();
+      if (settings.sound) { unlockAudio(); sfx("go"); }
+    });
+    $("tog-tilt").addEventListener("click", () => {
+      settings.tilt = !settings.tilt;
+      saveSettings();
+      syncSettingsUI();
+      if (settings.tilt) requestTiltPermission();
+      else listenTilt(false);
+    });
+    $("btn-tilt-perm").addEventListener("click", () => {
+      settings.tilt = true;
+      saveSettings();
+      syncSettingsUI();
+      requestTiltPermission();
+    });
+
+    $("btn-random").addEventListener("click", () => {
+      const cats = allCategories().filter((c) => c.words.length);
+      if (!cats.length) return;
+      startRound(cats[Math.floor(Math.random() * cats.length)]);
+    });
+    $("btn-mix").addEventListener("click", () => startRound(mixCategory()));
+    $("btn-export").addEventListener("click", exportAll);
+    $("btn-import").addEventListener("click", () => $("import-file").click());
+    $("import-file").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (f) importJSONFile(f);
+    });
+
+    $("zone-got").addEventListener("click", () => mark("correct"));
+    $("zone-pass").addEventListener("click", () => mark("pass"));
+    $("btn-end-now").addEventListener("click", () => { if (playing || countingDown) finishRound(); });
+    $("btn-again").addEventListener("click", () => { if (lastCategory) startRound(findCategory(lastCategory.id) || lastCategory); });
+    $("btn-home").addEventListener("click", goHome);
+
+    window.addEventListener("keydown", (e) => {
+      const tag = (e.target && e.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (!playing || !accepting) return;
+      if (e.code === "Space" || e.code === "ArrowRight") { e.preventDefault(); mark("correct"); }
+      else if (e.code === "ArrowLeft") { e.preventDefault(); mark("pass"); }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && playing) requestWakeLock();
+    });
+    window.addEventListener("resize", updateOrientation);
+    window.addEventListener("orientationchange", updateOrientation);
+    updateOrientation();
+
+    // Test hook used by the Playwright checks.
+    window.__HEADS_UP__ = {
+      startRound,
+      findCategory,
+      forceEnd: finishRound,
+      getState: () => ({
+        playing, countingDown, accepting, word: currentWord(),
+        results: results.slice(), settings, category: activeCategory && activeCategory.id
+      }),
+      setDuration: (n) => { settings.duration = n; saveSettings(); }
+    };
+
+    renderHome();
+    syncSettingsUI();
+  })();
+  </script>
+</body>
+</html>
