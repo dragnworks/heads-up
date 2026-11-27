@@ -380,11 +380,12 @@
       font-size: clamp(3rem, 12vw, 6rem);
       font-weight: 800; letter-spacing: 0.06em;
       opacity: 0;
-      transition: opacity 0.12s ease;
+      transition: none;
+      z-index: 8;
     }
     #flash-layer.show { opacity: 1; }
-    #flash-layer.correct { background: rgba(24, 170, 100, 0.92); }
-    #flash-layer.pass { background: rgba(232, 122, 32, 0.92); }
+    #flash-layer.correct { background: #12c56a; color: #fff; }
+    #flash-layer.pass { background: #ff8a2a; color: #fff; }
 
     #rotate-hint {
       top: auto; height: auto; padding: 8px;
@@ -623,13 +624,13 @@
     const PALETTE = ["#ff3d7f", "#ffd166", "#3dffb3", "#5ce1ff", "#8b7cff", "#ff8a3d", "#ff6ad5", "#7cff6b"];
     const DURATIONS = [30, 60, 90, 120];
     const TILT_LEVELS = {
-      // Values are |screen-up component|: 0 is vertical, 1 is flat.
-      // High matches the original trigger/neutral/cooldown; Medium and Low need a deeper tilt.
-      low:    { trigger: 0.85, neutral: 0.20, cooldown: 1200, hold: 250 },
-      medium: { trigger: 0.72, neutral: 0.25, cooldown: 1000, hold: 150 },
-      high:   { trigger: 0.52, neutral: 0.32, cooldown: 700,  hold: 150 }
+      // |screen-up|: 0 vertical, 1 flat. Down (correct) is easier and faster than up (pass).
+      low:    { triggerDown: 0.72, triggerUp: 0.85, neutral: 0.28, cooldown: 900, holdDown: 100, holdUp: 200 },
+      medium: { triggerDown: 0.60, triggerUp: 0.72, neutral: 0.35, cooldown: 800, holdDown: 70,  holdUp: 150 },
+      high:   { triggerDown: 0.48, triggerUp: 0.52, neutral: 0.38, cooldown: 700, holdDown: 50,  holdUp: 100 }
     };
-    const TILT_SMOOTH = 0.25; // exponential moving average toward each new sample
+    const TILT_SMOOTH = 0.40;
+    const TILT_SMOOTH_DOWN = 0.50; // faster EMA when the phone is moving toward the floor
     const TILT_SENSITIVITIES = ["low", "medium", "high"];
 
     const $ = (id) => document.getElementById(id);
@@ -665,6 +666,8 @@
     let tiltSmooth = null;
     let tiltPendingDir = null;
     let tiltPendingSince = 0;
+    let lastMotionAt = 0;
+    let flashTimer = 0;
     let lastCategory = null;
 
     function loadSettings() {
@@ -1024,6 +1027,17 @@
     }
 
     /* ---------- tilt ---------- */
+    // +1 = screen toward the sky (pass), -1 = screen toward the floor (correct).
+    // Uses the gravity vector so landscape-left and landscape-right both work.
+    // The old cos(beta)*cos(gamma) formula gimbal-locks when gamma is near ±90°,
+    // which is exactly the forehead-landscape pose.
+    function gravityScreenUp(e) {
+      const g = e.accelerationIncludingGravity;
+      if (!g || g.z == null) return null;
+      const mag = Math.hypot(g.x || 0, g.y || 0, g.z);
+      if (mag < 5) return null;
+      return -g.z / mag;
+    }
     function screenUpComponent(e) {
       if (e.beta == null || e.gamma == null) return null;
       const beta = e.beta * Math.PI / 180;
@@ -1032,21 +1046,26 @@
     }
     function onOrientation(e) {
       if (!playing || !accepting || !settings.tilt) return;
+      // Prefer gravity when DeviceMotion is arriving; Euler angles are a fallback.
+      if (Date.now() - lastMotionAt < 250) return;
       const v = screenUpComponent(e);
       if (v == null) return;
       handleTiltValue(v);
     }
     function onMotion(e) {
       if (!playing || !accepting || !settings.tilt) return;
-      const g = e.accelerationIncludingGravity;
-      if (!g || g.z == null) return;
-      // z is typically -9.8 screen-up, +9.8 screen-down. Normalize to same sign as orientation helper.
-      handleTiltValue(-g.z / 9.8);
+      const v = gravityScreenUp(e);
+      if (v == null) return;
+      lastMotionAt = Date.now();
+      handleTiltValue(v);
     }
     function handleTiltValue(raw) {
       const cfg = tiltConfig();
       if (tiltSmooth == null) tiltSmooth = raw;
-      else tiltSmooth += TILT_SMOOTH * (raw - tiltSmooth);
+      else {
+        const alpha = raw < tiltSmooth ? TILT_SMOOTH_DOWN : TILT_SMOOTH;
+        tiltSmooth += alpha * (raw - tiltSmooth);
+      }
       const v = tiltSmooth;
       const now = Date.now();
       if (Math.abs(v) < cfg.neutral) {
@@ -1056,14 +1075,15 @@
         tiltPendingSince = 0;
         return;
       }
-      if (!tiltArmed || tiltState !== "neutral" || now - lastTiltAt < cfg.cooldown) {
+      if (!tiltArmed || now - lastTiltAt < cfg.cooldown) {
         tiltPendingDir = null;
         tiltPendingSince = 0;
         return;
       }
       let dir = null;
-      if (v > cfg.trigger) dir = "up";
-      else if (v < -cfg.trigger) dir = "down";
+      let hold = 0;
+      if (v > cfg.triggerUp) { dir = "up"; hold = cfg.holdUp; }
+      else if (v < -cfg.triggerDown) { dir = "down"; hold = cfg.holdDown; }
       else {
         tiltPendingDir = null;
         tiltPendingSince = 0;
@@ -1074,7 +1094,7 @@
         tiltPendingSince = now;
         return;
       }
-      if (now - tiltPendingSince < cfg.hold) return;
+      if (now - tiltPendingSince < hold) return;
       tiltState = dir;
       tiltArmed = false;
       tiltPendingDir = null;
@@ -1234,8 +1254,9 @@
       if (!word) return;
       accepting = false;
       results.push({ word: word, correct: kind === "correct" });
-      sfx(kind);
       flash(kind === "correct");
+      haptic(kind);
+      sfx(kind);
       setTimeout(() => {
         if (!playing) return;
         advanceWord();
@@ -1244,11 +1265,22 @@
       }, 280);
     }
 
+    function haptic(kind) {
+      try {
+        if (typeof navigator.vibrate === "function") {
+          navigator.vibrate(kind === "correct" ? [25, 30, 45] : 35);
+        }
+      } catch (e) {}
+    }
+
     function flash(correct) {
       const el = $("flash-layer");
+      el.className = "";
       el.textContent = correct ? "GOT IT" : "PASS";
+      void el.offsetWidth;
       el.className = "show " + (correct ? "correct" : "pass");
-      setTimeout(() => { el.className = ""; el.textContent = ""; }, 260);
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => { el.className = ""; el.textContent = ""; }, 320);
     }
 
     function finishRound() {
