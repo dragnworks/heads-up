@@ -30,6 +30,7 @@ Tap the gear. Changes are saved in this browser:
 - Round length: 30 / 60 / 90 / 120 seconds (default 60)
 - Sound on/off — short beeps made in the browser, no audio files
 - Tilt on/off
+- Tilt sensitivity: Low, Medium, or High (default Medium). Medium and Low need a deeper, steadier tilt than High, so quick head movements are less likely to score. Tilt is also smoothed and has to be held past the trigger for a moment before it counts. After a score, bring the phone back to upright before the next one will register.
 
 ## Categories
 

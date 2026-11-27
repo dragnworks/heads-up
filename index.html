@@ -531,6 +531,14 @@
         <div><strong>Tilt controls</strong><span>Down = got it, up = pass. Needs a permission tap on iPhone.</span></div>
         <button type="button" class="switch" id="tog-tilt" aria-pressed="true" aria-label="Tilt controls"><i></i></button>
       </div>
+      <div class="field">
+        <label>Tilt sensitivity</label>
+        <div class="seg" id="tilt-sens-seg">
+          <button type="button" data-sens="low">Low</button>
+          <button type="button" data-sens="medium">Medium</button>
+          <button type="button" data-sens="high">High</button>
+        </div>
+      </div>
       <div class="hint">
         Tilt only works in a secure context (HTTPS or localhost). Opening this file directly (<code>file://</code>) or over plain HTTP is fine — just use taps or a keyboard instead. On iPhone, tap <strong>Enable tilt</strong> below (or Start) to allow motion access.
       </div>
@@ -614,9 +622,15 @@
     };
     const PALETTE = ["#ff3d7f", "#ffd166", "#3dffb3", "#5ce1ff", "#8b7cff", "#ff8a3d", "#ff6ad5", "#7cff6b"];
     const DURATIONS = [30, 60, 90, 120];
-    const TILT_NEUTRAL = 0.32;
-    const TILT_TRIGGER = 0.52;
-    const TILT_COOLDOWN = 700;
+    const TILT_LEVELS = {
+      // Values are |screen-up component|: 0 is vertical, 1 is flat.
+      // High matches the original trigger/neutral/cooldown; Medium and Low need a deeper tilt.
+      low:    { trigger: 0.85, neutral: 0.20, cooldown: 1200, hold: 250 },
+      medium: { trigger: 0.72, neutral: 0.25, cooldown: 1000, hold: 150 },
+      high:   { trigger: 0.52, neutral: 0.32, cooldown: 700,  hold: 150 }
+    };
+    const TILT_SMOOTH = 0.25; // exponential moving average toward each new sample
+    const TILT_SENSITIVITIES = ["low", "medium", "high"];
 
     const $ = (id) => document.getElementById(id);
     const screens = {
@@ -648,18 +662,32 @@
     let tiltState = "neutral";
     let lastTiltAt = 0;
     let tiltListenOn = false;
+    let tiltSmooth = null;
+    let tiltPendingDir = null;
+    let tiltPendingSince = 0;
     let lastCategory = null;
 
     function loadSettings() {
-      const d = { duration: 60, sound: true, tilt: true };
+      const d = { duration: 60, sound: true, tilt: true, tiltSensitivity: "medium" };
       try {
         const raw = JSON.parse(localStorage.getItem(STORAGE.settings) || "null");
         if (!raw) return d;
         if (DURATIONS.includes(Number(raw.duration))) d.duration = Number(raw.duration);
         if (typeof raw.sound === "boolean") d.sound = raw.sound;
         if (typeof raw.tilt === "boolean") d.tilt = raw.tilt;
+        if (TILT_SENSITIVITIES.includes(raw.tiltSensitivity)) d.tiltSensitivity = raw.tiltSensitivity;
       } catch (e) {}
       return d;
+    }
+    function tiltConfig() {
+      return TILT_LEVELS[settings.tiltSensitivity] || TILT_LEVELS.medium;
+    }
+    function resetTiltTracking() {
+      tiltArmed = false;
+      tiltState = "neutral";
+      tiltSmooth = null;
+      tiltPendingDir = null;
+      tiltPendingSince = 0;
     }
     function saveSettings() {
       try { localStorage.setItem(STORAGE.settings, JSON.stringify(settings)); } catch (e) {}
@@ -805,6 +833,9 @@
       });
       $("tog-sound").setAttribute("aria-pressed", String(settings.sound));
       $("tog-tilt").setAttribute("aria-pressed", String(settings.tilt));
+      document.querySelectorAll("#tilt-sens-seg button").forEach((b) => {
+        b.setAttribute("aria-pressed", String(b.dataset.sens === settings.tiltSensitivity));
+      });
     }
 
     function openSettings() {
@@ -1012,26 +1043,44 @@
       // z is typically -9.8 screen-up, +9.8 screen-down. Normalize to same sign as orientation helper.
       handleTiltValue(-g.z / 9.8);
     }
-    function handleTiltValue(v) {
+    function handleTiltValue(raw) {
+      const cfg = tiltConfig();
+      if (tiltSmooth == null) tiltSmooth = raw;
+      else tiltSmooth += TILT_SMOOTH * (raw - tiltSmooth);
+      const v = tiltSmooth;
       const now = Date.now();
-      if (Math.abs(v) < TILT_NEUTRAL) {
+      if (Math.abs(v) < cfg.neutral) {
         tiltState = "neutral";
         tiltArmed = true;
+        tiltPendingDir = null;
+        tiltPendingSince = 0;
         return;
       }
-      if (!tiltArmed || tiltState !== "neutral") return;
-      if (now - lastTiltAt < TILT_COOLDOWN) return;
-      if (v > TILT_TRIGGER) {
-        tiltState = "up";
-        tiltArmed = false;
-        lastTiltAt = now;
-        mark("pass");
-      } else if (v < -TILT_TRIGGER) {
-        tiltState = "down";
-        tiltArmed = false;
-        lastTiltAt = now;
-        mark("correct");
+      if (!tiltArmed || tiltState !== "neutral" || now - lastTiltAt < cfg.cooldown) {
+        tiltPendingDir = null;
+        tiltPendingSince = 0;
+        return;
       }
+      let dir = null;
+      if (v > cfg.trigger) dir = "up";
+      else if (v < -cfg.trigger) dir = "down";
+      else {
+        tiltPendingDir = null;
+        tiltPendingSince = 0;
+        return;
+      }
+      if (tiltPendingDir !== dir) {
+        tiltPendingDir = dir;
+        tiltPendingSince = now;
+        return;
+      }
+      if (now - tiltPendingSince < cfg.hold) return;
+      tiltState = dir;
+      tiltArmed = false;
+      tiltPendingDir = null;
+      tiltPendingSince = 0;
+      lastTiltAt = now;
+      mark(dir === "up" ? "pass" : "correct");
     }
     async function requestTiltPermission(opts) {
       const quiet = !!(opts && opts.quiet);
@@ -1126,8 +1175,7 @@
       playing = false;
       countingDown = true;
       accepting = false;
-      tiltState = "neutral";
-      tiltArmed = false;
+      resetTiltTracking();
       closeSettings();
       closeEditor();
       screens.end.classList.add("hidden");
@@ -1160,8 +1208,7 @@
       countingDown = false;
       playing = true;
       accepting = true;
-      tiltArmed = false;
-      tiltState = "neutral";
+      resetTiltTracking();
       endAt = Date.now() + settings.duration * 1000;
       showWord(currentWord());
       loopTimer();
@@ -1193,8 +1240,7 @@
         if (!playing) return;
         advanceWord();
         accepting = true;
-        tiltArmed = false;
-        tiltState = "neutral";
+        resetTiltTracking();
       }, 280);
     }
 
@@ -1284,6 +1330,13 @@
       saveSettings();
       syncSettingsUI();
       if (settings.sound) { unlockAudio(); sfx("go"); }
+    });
+    document.querySelectorAll("#tilt-sens-seg button").forEach((b) => {
+      b.addEventListener("click", () => {
+        settings.tiltSensitivity = b.dataset.sens;
+        saveSettings();
+        syncSettingsUI();
+      });
     });
     $("tog-tilt").addEventListener("click", () => {
       settings.tilt = !settings.tilt;
